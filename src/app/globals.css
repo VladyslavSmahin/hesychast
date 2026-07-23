@@ -1,0 +1,273 @@
+:root {
+  --bg-primary: #0D0B09;
+  --bg-card: #131110;
+  --bg-dark: #0E0C0A;
+  --bg-elevated: #1A1714;
+  --accent: #C0BEC8;
+  --accent-hover: #D0CED8;
+  --accent-active: #A8A6B0;
+  --text-primary: #F2EFE9;
+  --text-secondary: #9A938A;
+  --text-tertiary: #6A6258;
+  --border: #1C1A18;
+  --border-light: #2A2826;
+  --gold: #C9A84C;
+  --badge-new: #E8A547;
+  /* шрифти підключені через next/font (layout.tsx) */
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-body: var(--font-jost), system-ui, sans-serif;
+  /* церковний/класичний шрифт для H1 та назви бренду */
+  --font-church: var(--font-church-src), var(--font-cormorant), Georgia, serif;
+
+  /* ===== Адаптивні токени розкладки ===== */
+  /* Інлайн-стилі компонентів посилаються на ці змінні, а медіазапроси нижче
+     змінюють їх під планшет/мобільний — так зберігаємо вигляд прототипу й
+     отримуємо адаптивність без переписування кожного компонента. */
+  --page-pad: 48px;       /* горизонтальні відступи секцій */
+  --hero-cols: 1.1fr 0.9fr;
+  --hero-h1: 96px;
+  --hero-h: 520px;
+  --h2-size: 56px;
+  --menu-cols: repeat(4, 1fr);
+  --review-cols: 4;         /* скільки відгуків видно в слайдері */
+  --card-ar: 16 / 9;        /* пропорції фото в картці товару */
+  --card-title-mt: 10px;    /* верхній відступ назви (десктоп) */
+  --modal-photo-h: 320px;   /* мін. висота фото в модалці товару */
+  --modal-body-pt: 22px;    /* верхній відступ контенту модалки */
+  --promo-cols: repeat(3, 1fr);
+  --reviews-cols: 1fr 1.2fr;
+  --reviews-gap: 100px;
+  --map-cols: 1.6fr 1fr;
+  --footer-cols: 1.6fr 1fr 1.2fr;
+  --footer-gap: 60px;
+  --modal-cols: 450px 1fr;
+  --header-h: 96px;
+  --py: 60px;           /* вертикальні відступи секцій */
+  --hero-pt: 150px;     /* верхній відступ hero (під фіксованою шапкою) */
+  --form-2col: 1fr 1fr; /* двоколонкові поля форм → 1fr на мобільному */
+  --head-mb: 32px;      /* відступ під заголовком секції */
+  --logo-h: 48px;       /* висота лого у шапці */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: var(--accent); color: var(--bg-primary); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-light); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* utility */
+.font-display { font-family: var(--font-display); }
+.font-body { font-family: var(--font-body); }
+.font-church { font-family: var(--font-church); }
+h1 { font-family: var(--font-church); }
+.eyebrow { font-size: 11px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; color: var(--text-secondary); }
+
+.btn-primary {
+  background: var(--accent); color: #0A0908;
+  border: none; padding: 16px 36px;
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.25s ease;
+}
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 24px rgba(192,190,200,0.15); }
+.btn-primary:active { background: var(--accent-active); }
+.btn-primary:disabled { background: var(--border-light); color: var(--text-secondary); cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent; color: var(--text-primary);
+  border: 1px solid #444444; padding: 16px 36px;
+  font-family: var(--font-body); font-size: 11px; font-weight: 400;
+  letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.25s ease;
+}
+.btn-secondary:hover { background: var(--bg-elevated); border-color: var(--accent); }
+.btn-secondary:active { background: var(--bg-primary); border-color: var(--accent); }
+
+.btn-gold {
+  background: var(--gold); color: #1A1208;
+  border: none; padding: 14px 28px;
+  font-family: var(--font-body); font-size: 10px; font-weight: 500;
+  letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.25s ease;
+}
+.btn-gold:hover { background: #D4B65E; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp 0.5s ease both; }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.slide-in { animation: slideInRight 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.slide-in-left { animation: slideInLeft 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.25s ease both; }
+@keyframes modalPop { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-pop { animation: modalPop 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* вертикальний слайд зверху вниз (hero-промо-слайдер) */
+@keyframes heroDrop { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+.menu-card { transition: transform 0.3s ease, border-color 0.3s ease; }
+.menu-card:hover { transform: translateY(-4px); border-color: var(--border-light); }
+
+.nav-link {
+  padding: 8px 12px;
+  font-size: 12px; font-weight: 400; letter-spacing: 1.8px;
+  text-transform: uppercase; color: var(--text-secondary);
+  text-decoration: none; cursor: pointer; transition: color 0.2s; white-space: nowrap;
+}
+.nav-link:hover { color: var(--text-primary); }
+
+.chip {
+  padding: 9px 18px; border-radius: 16px;
+  font-family: var(--font-body); font-size: 12px; font-weight: 400;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+}
+.chip:hover { color: var(--text-primary); border-color: #3A3833; }
+.chip.active { background: var(--bg-elevated); border-color: var(--accent); color: var(--accent); }
+
+/* квадратний варіант чипа — для навігації по підкатегоріях (ролах) */
+.chip.square { border-radius: 4px; }
+
+/* приховати стрілки-спінери у number-інпутів */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.no-spin { -moz-appearance: textfield; appearance: textfield; }
+
+/* ряд підкатегорій: переноситься на десктопі, горизонтальний скрол на мобільному */
+.subcat-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+@media (max-width: 768px) {
+  .subcat-row {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px; scrollbar-width: none;
+  }
+  .subcat-row::-webkit-scrollbar { display: none; }
+  .subcat-row > .chip { flex: 0 0 auto; }
+}
+
+.form-input {
+  width: 100%; background: var(--bg-card); border: 1px solid var(--border-light);
+  color: var(--text-primary); font-family: var(--font-body); font-size: 13px; font-weight: 300;
+  padding: 16px 18px; outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text-secondary); }
+textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--font-body); }
+
+.star { cursor: pointer; transition: color 0.2s, transform 0.2s; }
+.star:hover { transform: scale(1.1); }
+
+/* горизонтальний скрол без смуги (нижня навігація категорій) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* місце знизу під фіксовану панель категорій на мобільному */
+@media (max-width: 860px) {
+  body { padding-bottom: 84px; }
+}
+
+/* показувати лише на десктопі / лише на мобільному */
+.desktop-only { display: initial; }
+.mobile-only { display: none; }
+/* бургер-кнопка: flex-центрування, прихована на десктопі */
+.burger { display: none; align-items: center; justify-content: center; }
+
+/* ============================================================
+   АДАПТИВ — змінюємо токени розкладки на менших екранах
+   ============================================================ */
+@media (max-width: 1100px) {
+  :root {
+    --hero-h1: 72px;
+    --h2-size: 46px;
+    --menu-cols: repeat(3, 1fr);
+    --review-cols: 3;
+    --reviews-gap: 56px;
+  }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --page-pad: 24px;
+    --hero-cols: 1fr;
+    --hero-h1: 60px;
+    --hero-h: 320px;
+    --h2-size: 40px;
+    --menu-cols: repeat(2, 1fr);
+    --review-cols: 2;
+    --card-ar: 3 / 2;        /* нижче фото — картка ближче до квадрата, більше вміщається */
+    --card-title-mt: 5px;    /* менший відступ назви на мобілці/планшеті */
+    --modal-photo-h: 192px;  /* фото в модалці на мобілці */
+    --modal-body-pt: 10px;   /* майже без відступу над назвою */
+    --promo-cols: 1fr;
+    --reviews-cols: 1fr;
+    --map-cols: 1fr;
+    --footer-cols: 1fr 1fr;
+    --footer-gap: 40px;
+    --modal-cols: 1fr;
+    --header-h: 72px;
+    --py: 36px;
+    --hero-pt: 120px;
+    --form-2col: 1fr;
+    --head-mb: 16px;
+  }
+  .desktop-only { display: none !important; }
+  .mobile-only { display: initial; }
+  .burger { display: flex; }
+  /* заголовки секцій — менші відступи зверху/знизу на мобілці (≈ втричі) */
+  .section-title { margin: 11px 0; }
+  /* контент Hero — по центру на мобільному */
+  .hero-copy { text-align: center; }
+  .hero-copy p { margin-left: auto; margin-right: auto; }
+  /* Hero на мобілці: ейбраун → слайдер → кнопки (назва — лише в хедері) */
+  .hero-grid { display: flex !important; flex-direction: column; gap: 20px !important; align-items: stretch !important; }
+  .hero-copy { display: contents; }
+  .hero-eyebrow { order: 1; margin-bottom: 0 !important; }
+  .hero-slider { order: 2; }
+  .hero-cta { order: 3; width: 100%; }
+  .hero-title, .hero-tagline, .hero-lead { display: none; }
+  /* «Sushi Syndicate» — в один рядок */
+  .hero-title { font-size: clamp(24px, 9vw, 40px) !important; white-space: nowrap; }
+  .hero-br { display: none; }
+  /* дві кнопки — в один ряд */
+  .hero-cta { justify-content: center; flex-wrap: nowrap; gap: 10px; }
+  .hero-cta .btn-primary, .hero-cta .btn-secondary {
+    flex: 1 1 0; min-width: 0; padding: 13px 6px; font-size: 10px; letter-spacing: 0.5px; white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  :root {
+    --page-pad: 16px;
+    --hero-h1: 48px;
+    --h2-size: 32px;
+    --menu-cols: repeat(2, 1fr);   /* 2 картки в ряд на телефоні */
+    --review-cols: 1;              /* один відгук на екран — для читабельності */
+    --footer-cols: 1fr;
+    --py: 28px;
+    --hero-pt: 104px;
+    --head-mb: 12px;
+  }
+  /* ховаємо декоративне hero-фото на маленьких екранах */
+  .hero-photo { display: none !important; }
+}
+
+/* вузькі телефони — менше лого, щоб бренд + кошик + бургер не тіснилися */
+@media (max-width: 360px) {
+  :root { --logo-h: 40px; --page-pad: 14px; }
+}

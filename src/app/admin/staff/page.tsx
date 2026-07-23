@@ -1,0 +1,202 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useAdminAuth, type Role } from "@/features/admin/AdminAuthContext";
+import s from "@/components/admin/admin.module.css";
+
+interface StaffRow {
+  id: string;
+  email: string;
+  role: Role;
+  created_at: string;
+}
+
+export default function StaffPage() {
+  const { user } = useAdminAuth();
+  const isAdmin = user?.role === "admin";
+  const supabase = useMemo(() => createClient(), []);
+
+  const [rows, setRows] = useState<StaffRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role>("editor");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("allowed_staff")
+      .select("id, email, role, created_at")
+      .order("created_at", { ascending: true });
+    if (error) setError(error.message);
+    else setRows((data as StaffRow[]) ?? []);
+    setLoading(false);
+  }, [supabase]);
+
+  useEffect(() => { if (isAdmin) load(); }, [isAdmin, load]);
+
+  if (!isAdmin) {
+    return (
+      <div className={s.card}>
+        <div className={s.placeholder}>
+          <div className={s.placeholderTitle}>Доступ обмежено</div>
+          <p className={s.hint}>Керувати співробітниками може лише головний адміністратор.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // задає/скидає пароль через серверний route (потрібен service_role). Email має бути
+  // вже у білому списку — тригер створить профіль лише для нього.
+  const setStaffPassword = async (eml: string, pwd: string): Promise<string | null> => {
+    const res = await fetch("/api/admin/staff/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: eml, password: pwd }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      const map: Record<string, string> = {
+        weak_password: "Пароль закороткий (мінімум 8 символів)",
+        bad_email: "Невірний email",
+        not_in_allowlist: "Email не у білому списку",
+        unauthorized: "Лише головний адміністратор може задавати паролі",
+      };
+      return map[data.error] ?? "Не вдалося зберегти пароль";
+    }
+    return null;
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(""); setNotice("");
+    const eml = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(eml)) { setError("Невірний email"); return; }
+    const pwd = password.trim();
+    if (pwd && pwd.length < 8) { setError("Пароль закороткий (мінімум 8 символів)"); return; }
+
+    // спочатку у білий список — інакше пароль ні до чого (профіль не створиться)
+    const { error } = await supabase.from("allowed_staff").insert({ email: eml, role });
+    if (error) { setError(error.code === "23505" ? "Такий email вже додано" : error.message); return; }
+
+    if (pwd) {
+      const perr = await setStaffPassword(eml, pwd);
+      if (perr) { setError(`Додано у список, але пароль не задано: ${perr}`); setEmail(""); setPassword(""); load(); return; }
+      setNotice(`${eml}: додано, пароль задано`);
+    }
+    setEmail(""); setPassword("");
+    load();
+  };
+
+  const resetPassword = async (eml: string) => {
+    setError(""); setNotice("");
+    const pwd = window.prompt(`Новий пароль для ${eml} (мінімум 8 символів):`);
+    if (pwd === null) return;
+    if (pwd.trim().length < 8) { setError("Пароль закороткий (мінімум 8 символів)"); return; }
+    const perr = await setStaffPassword(eml, pwd.trim());
+    if (perr) setError(perr); else setNotice(`${eml}: пароль оновлено`);
+  };
+
+  const updateRole = async (id: string, newRole: Role) => {
+    const { error } = await supabase.from("allowed_staff").update({ role: newRole }).eq("id", id);
+    if (error) setError(error.message); else load();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("allowed_staff").delete().eq("id", id);
+    if (error) setError(error.message); else load();
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <p className={s.hint}>
+        Білий список — email співробітників, які можуть увійти через Google або за паролем.
+        Пароль необов’язковий: задайте його тут, щоб дозволити вхід без Google. Видалення з списку
+        відкликає доступ (профіль і дані захищені RLS).
+        <br />
+        <b>editor</b> — може все, крім видалення. <b>admin</b> — повний доступ.
+        <br />
+        <span style={{ opacity: 0.7 }}>
+          Примітка: роль застосовується при першому вході користувача. Якщо акаунт уже входив до
+          додавання — попросіть увійти ще раз.
+        </span>
+      </p>
+
+      {/* Add form */}
+      <form className={s.card} onSubmit={handleAdd}>
+        <div className={s.cardHead}><div className={s.cardTitle}>Додати співробітника</div></div>
+        <div style={{ padding: 22 }}>
+          <div className={s.formRow}>
+            <div className={s.field} style={{ flex: 1, minWidth: 200 }}>
+              <span className={s.fieldLabel}>Email</span>
+              <input className={s.input} type="email" placeholder="employee@gmail.com" value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }} />
+            </div>
+            <div className={s.field} style={{ flex: 1, minWidth: 160 }}>
+              <span className={s.fieldLabel}>Пароль (необов’язково)</span>
+              <input className={s.input} type="text" placeholder="для входу без Google" value={password}
+                autoComplete="new-password"
+                onChange={(e) => { setPassword(e.target.value); setError(""); }} />
+            </div>
+            <div className={s.field}>
+              <span className={s.fieldLabel}>Роль</span>
+              <select className={s.input} value={role} onChange={(e) => setRole(e.target.value as Role)}>
+                <option value="editor">editor</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+            <button className={s.btn} type="submit" disabled={!email.trim()}>Додати</button>
+          </div>
+          {error && <p className={s.error} style={{ marginTop: 10 }}>{error}</p>}
+          {notice && <p className={s.hint} style={{ marginTop: 10, color: "var(--accent)" }}>{notice}</p>}
+        </div>
+      </form>
+
+      {/* Table */}
+      <div className={s.card}>
+        <div className={s.cardHead}><div className={s.cardTitle}>Білий список ({rows.length})</div></div>
+        <div className={s.tableWrap}>
+          <table className={s.table}>
+            <thead>
+              <tr><th>Email</th><th>Роль</th><th>Додано</th><th style={{ textAlign: "right" }}>Дії</th></tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={4} style={{ color: "var(--text-secondary)", padding: 20 }}>Завантаження…</td></tr>
+              ) : rows.map((m) => {
+                const isSelf = m.email === user?.email;
+                return (
+                  <tr key={m.id}>
+                    <td>{m.email} {isSelf && <span className={s.hint} style={{ fontSize: 11 }}>(ви)</span>}</td>
+                    <td>
+                      <select className={s.input} style={{ width: "auto", padding: "6px 10px" }}
+                        value={m.role} disabled={isSelf}
+                        onChange={(e) => updateRole(m.id, e.target.value as Role)}>
+                        <option value="editor">editor</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </td>
+                    <td style={{ color: "var(--text-secondary)" }}>{new Date(m.created_at).toLocaleDateString("uk-UA")}</td>
+                    <td>
+                      <div className={s.rowActions}>
+                        <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => resetPassword(m.email)}>
+                          Пароль
+                        </button>
+                        <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} disabled={isSelf} onClick={() => remove(m.id)}>
+                          Прибрати
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
