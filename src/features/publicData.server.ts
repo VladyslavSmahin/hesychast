@@ -128,5 +128,17 @@ export async function fetchPublicData(): Promise<PublicData> {
     id: r.id, authorName: r.author_name, rating: r.rating, text: r.text, createdAt: r.created_at,
   }));
 
+  // ДЕМО-ФОЛБЕК: поки в Supabase немає товарів (порожня/непобудована БД) —
+  // віддаємо демо-каталог, щоб було що верстати. Зникне сам, коли зʼявляться товари.
+  if (catalog.length === 0) {
+    const { demoCategories, demoProducts, demoReviews } = await import("@/data/demo");
+    return {
+      catalog: demoProducts,
+      categories: categories.length ? categories : demoCategories,
+      subcategories, promos, banners, delivery, navSpecials, glossary,
+      reviews: reviews.length ? reviews : demoReviews,
+    };
+  }
+
   return { catalog, categories, subcategories, promos, banners, delivery, navSpecials, glossary, reviews };
 }
