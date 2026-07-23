@@ -11,10 +11,10 @@ const A = (name: string) => `/assets/${name}`;
 export const CONTACTS = {
   phone: "+38 (050) 000-00-00",
   hours: "9:00 — 20:00",
-  address: "Україна",
-  addressShort: "Православна крамниця · Доставка Новою Поштою",
+  address: "м. Горішні Плавні, Полтавська область",
+  addressShort: "Горішні Плавні · Доставка Новою Поштою",
   // запит для вбудованої Google-карти (без API-ключа)
-  mapQuery: "Україна",
+  mapQuery: "Горішні Плавні, Полтавська область, Україна",
   instagram: "#",
   telegram: "#",
   facebook: "#",

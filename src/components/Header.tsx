@@ -12,17 +12,15 @@ function BrandMark() {
     <a
       href="#"
       onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-      style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}
+      style={{ display: "flex", alignItems: "center", textDecoration: "none" }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={ASSET_ICONS.logo}
-        alt="Sushi Syndicate"
-        style={{ height: "var(--logo-h)", width: "auto", display: "block", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
-      />
-      <div style={{ lineHeight: 0.95 }}>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, letterSpacing: 5, color: "var(--text-primary)" }}>SUSHI</div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 10, fontWeight: 400, letterSpacing: 4, color: "var(--text-secondary)", marginTop: 3 }}>SYNDICATE</div>
+      <div
+        style={{
+          fontFamily: "var(--font-church)", fontSize: 26, fontWeight: 700, letterSpacing: 6,
+          color: "var(--text-primary)", whiteSpace: "nowrap",
+        }}
+      >
+        ІЄСИХАСТ
       </div>
     </a>
   );
