@@ -246,12 +246,12 @@ export function useDbPromos() {
     setLoading(true);
     const { data, error } = await supabase
       .from("promos")
-      .select("id, product_id, promo_price, old_price, is_active, sort_order, valid_from, valid_until")
+      .select("id, product_id, promo_price, is_active, sort_order, valid_from, valid_until")
       .order("sort_order");
     if (error) console.error("promos:", error.message);
     else setPromos((data ?? []).map((p) => ({
       id: p.id, productId: p.product_id,
-      price: Number(p.promo_price), oldPrice: Number(p.old_price ?? 0),
+      price: Number(p.promo_price), oldPrice: 0,
       isActive: p.is_active, sortOrder: p.sort_order,
       validFrom: p.valid_from ? String(p.valid_from).slice(0, 10) : null,
       validUntil: p.valid_until ? String(p.valid_until).slice(0, 10) : null,
@@ -265,7 +265,7 @@ export function useDbPromos() {
 function promoFields(input: PromoInput) {
   return {
     product_id: input.productId,
-    promo_price: input.price, old_price: input.oldPrice || null,
+    promo_price: input.price,
     is_active: input.isActive,
     // дату-початок беремо як 00:00, дату-кінець — як кінець доби, щоб акція діяла весь день
     valid_from: input.validFrom ? `${input.validFrom}T00:00:00` : null,
