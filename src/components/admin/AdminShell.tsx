@@ -15,18 +15,13 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
     items: [
       { href: "/admin", label: "Огляд" },
       { href: "/admin/categories", label: "Категорії" },
-      { href: "/admin/subcategories", label: "Підкатегорії" },
       { href: "/admin/products", label: "Товари" },
-      { href: "/admin/deleted", label: "Кошик" },
-      { href: "/admin/ingredients", label: "Інгредієнти" },
-      { href: "/admin/price-history", label: "Історія цін" },
     ],
   },
   {
     group: "Маркетинг",
     items: [
       { href: "/admin/promos", label: "Акції" },
-      { href: "/admin/promo-codes", label: "Промокоди" },
     ],
   },
   {
@@ -40,7 +35,6 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   {
     group: "Система",
     items: [
-      { href: "/admin/settings", label: "Доставка" },
       { href: "/admin/glossary", label: "Глосарій" },
       { href: "/admin/staff", label: "Співробітники" },
     ],
@@ -102,10 +96,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       {navOpen && <div className={s.overlay} onClick={() => setNavOpen(false)} />}
       <aside className={`${s.sidebar} ${navOpen ? s.sidebarOpen : ""}`}>
         <Link href="/admin" className={s.brand}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logo-fish.png" alt="" style={{ height: 34 }} />
           <div>
-            <div className={s.brandText}>SUSHI</div>
+            <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІЄСИХАСТ</div>
             <div className={s.brandSub}>Адмінпанель</div>
           </div>
         </Link>

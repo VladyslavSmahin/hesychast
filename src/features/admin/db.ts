@@ -38,33 +38,28 @@ const slugify = (s: string) =>
   "-" + Math.random().toString(36).slice(2, 7);
 
 // ---------- Рядки select ----------
+// Спрощена схема: товар = назва + ціна + опис + вага + бейдж + фото + категорія.
 interface ProductRow {
-  id: string; category_id: string | null; subcategory_id: string | null; name: string; slug: string;
-  price: number | string; weight: string | null; pieces: string | null; badge: string | null;
-  short_desc: string | null; full_desc: string | null; composition: string | null; image_path: string | null;
-  is_available: boolean; deleted_at: string | null; sort_order: number;
-  items: { ingredient_id: string; grams: number | string | null }[] | null;
-  setItems: { product_id: string; sort_order: number }[] | null;
+  id: string; category_id: string | null; name: string; slug: string;
+  price: number | string; weight: string | null; badge: string | null;
+  description: string | null; image_path: string | null;
+  is_available: boolean; sort_order: number;
 }
 
 function mapProduct(p: ProductRow): DbProduct {
-  const items = p.items ?? [];
-  const grams: Record<string, number> = {};
-  for (const it of items) if (it.grams != null) grams[it.ingredient_id] = Number(it.grams);
-  const setItems = (p.setItems ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
   return {
-    id: p.id, categoryId: p.category_id, subcategoryId: p.subcategory_id,
-    name: p.name, slug: p.slug, price: Number(p.price), weight: p.weight ?? "", pieces: p.pieces ?? "",
-    badge: (p.badge ?? "") as Badge, desc: p.short_desc ?? "", composition: p.composition ?? "",
-    fullDesc: p.full_desc ?? "", photo: p.image_path ?? null, isAvailable: p.is_available,
-    deletedAt: p.deleted_at, sortOrder: p.sort_order,
-    ingredientIds: items.map((it) => it.ingredient_id), ingredientGrams: grams,
-    setItemIds: setItems.map((it) => it.product_id),
+    id: p.id, categoryId: p.category_id, subcategoryId: null,
+    name: p.name, slug: p.slug, price: Number(p.price), weight: p.weight ?? "", pieces: "",
+    badge: (p.badge ?? "") as Badge, desc: p.description ?? "", composition: "",
+    fullDesc: p.description ?? "", photo: p.image_path ?? null, isAvailable: p.is_available,
+    deletedAt: null, sortOrder: p.sort_order,
+    ingredientIds: [], ingredientGrams: {},
+    setItemIds: [],
   };
 }
 
 const PRODUCT_SELECT =
-  "id, category_id, subcategory_id, name, slug, price, weight, pieces, badge, short_desc, full_desc, composition, image_path, is_available, deleted_at, sort_order, items:product_ingredients(ingredient_id, grams), setItems:set_items!set_id(product_id, sort_order)";
+  "id, category_id, name, slug, price, weight, badge, description, image_path, is_available, sort_order";
 
 // ---------- Хуки читання ----------
 export function useDbProducts() {
@@ -124,41 +119,11 @@ export function useDbSubcategories() {
 }
 
 // ---------- Мутації ----------
-async function syncIngredients(
-  supabase: ReturnType<typeof createClient>,
-  productId: string,
-  ids: string[],
-  grams: Record<string, number>
-): Promise<string | undefined> {
-  const del = await supabase.from("product_ingredients").delete().eq("product_id", productId);
-  if (del.error) return del.error.message;
-  if (ids.length) {
-    const ins = await supabase.from("product_ingredients").insert(
-      ids.map((id) => ({ product_id: productId, ingredient_id: id, grams: grams[id] ?? null }))
-    );
-    if (ins.error) return ins.error.message;
-  }
-  return undefined;
-}
-
-// Склад сету: зв'язки set_items (set_id -> product_id ролів).
-async function syncSetItems(supabase: ReturnType<typeof createClient>, setId: string, productIds: string[]): Promise<string | undefined> {
-  const del = await supabase.from("set_items").delete().eq("set_id", setId);
-  if (del.error) return del.error.message;
-  if (productIds.length) {
-    const ins = await supabase.from("set_items").insert(
-      productIds.map((pid, i) => ({ set_id: setId, product_id: pid, qty: 1, sort_order: i }))
-    );
-    if (ins.error) return ins.error.message;
-  }
-  return undefined;
-}
-
 function productFields(input: ProductInput) {
   return {
-    category_id: input.categoryId, subcategory_id: input.subcategoryId,
-    name: input.name, short_desc: input.desc, full_desc: input.fullDesc, composition: input.composition,
-    price: input.price, weight: input.weight || null, pieces: input.pieces || null,
+    category_id: input.categoryId,
+    name: input.name, description: input.desc || null,
+    price: input.price, weight: input.weight || null,
     badge: input.badge || null, image_path: input.photo, is_available: input.isAvailable,
   };
 }
@@ -166,21 +131,16 @@ function productFields(input: ProductInput) {
 /** Повертає текст помилки або undefined при успіху. */
 export async function dbCreateProduct(input: ProductInput): Promise<string | undefined> {
   const supabase = createClient();
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("products")
-    .insert({ ...productFields(input), slug: slugify(input.name), sort_order: 9999 })
-    .select("id").single();
-  if (error || !data) return error?.message ?? "Не вдалося створити товар";
-  return (await syncIngredients(supabase, data.id, input.ingredientIds, input.ingredientGrams))
-    ?? (await syncSetItems(supabase, data.id, input.setItemIds));
+    .insert({ ...productFields(input), slug: slugify(input.name), sort_order: 9999 });
+  return error?.message;
 }
 
 export async function dbUpdateProduct(id: string, input: ProductInput): Promise<string | undefined> {
   const supabase = createClient();
   const { error } = await supabase.from("products").update(productFields(input)).eq("id", id);
-  if (error) return error.message;
-  return (await syncIngredients(supabase, id, input.ingredientIds, input.ingredientGrams))
-    ?? (await syncSetItems(supabase, id, input.setItemIds));
+  return error?.message;
 }
 
 /** Повертає текст помилки або undefined при успіху. */
@@ -191,18 +151,18 @@ export async function dbUpdatePrice(id: string, price: number): Promise<string |
 export async function dbSetAvailable(id: string, value: boolean) {
   await createClient().from("products").update({ is_available: value }).eq("id", id);
 }
+// Спрощена схема без «кошика» (soft-delete): видалення одразу фізичне.
 export async function dbSoftDelete(id: string) {
-  await createClient().from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+  await createClient().from("products").delete().eq("id", id);
 }
 export async function dbRestore(id: string) {
-  await createClient().from("products").update({ deleted_at: null }).eq("id", id);
+  // немає soft-delete — заглушка для сумісності зі старими екранами
 }
 export async function dbHardDelete(id: string) {
   await createClient().from("products").delete().eq("id", id);
 }
-export async function dbPurgeExpired(days = 90) {
-  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
-  await createClient().from("products").delete().not("deleted_at", "is", null).lt("deleted_at", cutoff);
+export async function dbPurgeExpired() {
+  // немає soft-delete — нічого прибирати
 }
 
 // ---------- Інгредієнти CRUD ----------
@@ -446,13 +406,13 @@ export function useDbOrders() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, discount, delivery_cost, total, created_at, items:order_items(product_name, price, quantity)")
+      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, delivery_cost, total, created_at, items:order_items(product_name, price, quantity)")
       .order("created_at", { ascending: false });
     if (error) console.error("orders:", error.message);
     else setOrders((data ?? []).map((o) => ({
       id: o.id, customerName: o.customer_name, phone: o.phone, deliveryType: o.delivery_type as "delivery" | "pickup",
       address: o.address, comment: o.comment, status: o.status as OrderStatus,
-      subtotal: Number(o.subtotal), discount: Number(o.discount), deliveryCost: Number(o.delivery_cost), total: Number(o.total),
+      subtotal: Number(o.subtotal), discount: 0, deliveryCost: Number(o.delivery_cost), total: Number(o.total),
       createdAt: o.created_at,
       items: ((o.items ?? []) as { product_name: string; price: number; quantity: number }[])
         .map((it) => ({ name: it.product_name, price: Number(it.price), quantity: it.quantity })),
