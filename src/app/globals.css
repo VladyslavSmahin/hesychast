@@ -169,6 +169,21 @@ h1 { font-family: var(--font-church); }
 .form-input::placeholder { color: var(--text-secondary); }
 textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--font-body); }
 
+/* Автозаповнення в Chrome/Safari перефарбовує поле у свій світлий фон —
+   на темній формі це виглядає як біла пляма. Власне властивість background
+   браузер ігнорує, тому перекриваємо фон внутрішньою тінню, а колір тексту —
+   -webkit-text-fill-color. Довга transition не дає фону блимнути білим. */
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  caret-color: var(--text-primary);
+  transition: background-color 100000s ease-in-out 0s;
+}
+
 .star { cursor: pointer; transition: color 0.2s, transform 0.2s; }
 .star:hover { transform: scale(1.1); }
 
