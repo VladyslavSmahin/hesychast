@@ -85,7 +85,8 @@ export default async function ProductPage({ params }: Params) {
       }
     >
       <article style={{ display: "grid", gridTemplateColumns: "var(--modal-cols)", gap: 32, alignItems: "start" }}>
-        <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", minHeight: "var(--modal-photo-h, 320px)" }}>
+        {/* фото — квадрат, як у модалці */}
+        <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", aspectRatio: "1 / 1" }}>
           <PhotoSlot h="100%" photo={product.photo} alt={product.name} priority sizes="(max-width: 900px) 100vw, 560px" />
           {product.badge && (
             <div

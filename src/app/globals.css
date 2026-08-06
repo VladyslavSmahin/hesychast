@@ -32,7 +32,6 @@
   --review-cols: 4;         /* скільки відгуків видно в слайдері */
   --card-ar: 1 / 1;         /* пропорції фото в картці товару — квадрат */
   --card-title-mt: 10px;    /* верхній відступ назви (десктоп) */
-  --modal-photo-h: 320px;   /* мін. висота фото в модалці товару */
   --modal-body-pt: 22px;    /* верхній відступ контенту модалки */
   --promo-cols: repeat(3, 1fr);
   --reviews-cols: 1fr 1.2fr;
@@ -212,7 +211,6 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
     --review-cols: 2;
     --card-ar: 1 / 1;        /* на мобілці фото теж квадратне */
     --card-title-mt: 5px;    /* менший відступ назви на мобілці/планшеті */
-    --modal-photo-h: 192px;  /* фото в модалці на мобілці */
     --modal-body-pt: 10px;   /* майже без відступу над назвою */
     --promo-cols: 1fr;
     --reviews-cols: 1fr;

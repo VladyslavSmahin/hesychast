@@ -56,7 +56,8 @@ export default function ProductModal({
           <Icon.Close width="14" height="14" />
         </button>
 
-        <div style={{ position: "relative", minHeight: "var(--modal-photo-h, 320px)" }}>
+        {/* фото — квадрат: висота дорівнює ширині колонки */}
+        <div style={{ position: "relative", aspectRatio: "1 / 1", alignSelf: "start" }}>
           <PhotoSlot h="100%" photo={item.photo} alt={item.name} sizes="(max-width: 900px) 100vw, 450px" />
           {item.badge && (
             <div
