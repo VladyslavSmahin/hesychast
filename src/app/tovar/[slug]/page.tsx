@@ -5,6 +5,8 @@ import CatalogShell from "@/components/catalog/CatalogShell";
 import ProductGridCard from "@/components/catalog/ProductGridCard";
 import AddToCartButton from "@/components/catalog/AddToCartButton";
 import { PhotoSlot } from "@/components/icons";
+import JsonLd from "@/components/JsonLd";
+import { productSchema, breadcrumbSchema } from "@/lib/schema";
 import { fetchProductBySlug, fetchRelatedProducts } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -47,7 +49,16 @@ export default async function ProductPage({ params }: Params) {
   const crumbLink: React.CSSProperties = { color: "var(--text-secondary)", textDecoration: "none" };
 
   return (
-    <CatalogShell
+    <>
+      <JsonLd data={productSchema(product, category?.name)} />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Головна", path: "/" },
+          ...(category ? [{ name: category.name, path: `/katalog/${category.slug}` }] : []),
+          { name: product.name, path: `/tovar/${product.slug}` },
+        ])}
+      />
+      <CatalogShell
       breadcrumbs={
         <nav aria-label="Хлібні крихти" style={{ fontSize: 12, letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 22 }}>
           <Link href="/" style={crumbLink}>Головна</Link>
@@ -126,6 +137,7 @@ export default async function ProductPage({ params }: Params) {
           </div>
         </section>
       )}
-    </CatalogShell>
+      </CatalogShell>
+    </>
   );
 }

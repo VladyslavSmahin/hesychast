@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Jost, Old_Standard_TT } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CartProvider } from "@/features/cart/CartContext";
+import { SITE_URL } from "@/lib/siteUrl";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -30,14 +31,8 @@ const church = Old_Standard_TT({
   display: "swap",
 });
 
-// Базова адреса для canonical і og:url на всіх сторінках. Домену ще немає —
-// беремо з NEXT_PUBLIC_SITE_URL, інакше з адреси, яку дає Vercel.
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "ІСИХАСТ — православна крамниця: мед з пасіки, церковне начиння, мерч",
     template: "%s | ІСИХАСТ",

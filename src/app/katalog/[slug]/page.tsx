@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import CatalogShell from "@/components/catalog/CatalogShell";
 import ProductGridCard from "@/components/catalog/ProductGridCard";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
 import { fetchCategoryBySlug } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -49,7 +51,15 @@ export default async function CategoryPage({ params }: Params) {
   const { category, products } = found;
 
   return (
-    <CatalogShell
+    <>
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Головна", path: "/" },
+          { name: category.name, path: `/katalog/${category.slug}` },
+        ])}
+      />
+      {products.length > 0 && <JsonLd data={itemListSchema(products)} />}
+      <CatalogShell
       breadcrumbs={
         <nav aria-label="Хлібні крихти" style={{ fontSize: 12, letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 22 }}>
           <Link href="/" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>Головна</Link>
@@ -77,6 +87,7 @@ export default async function CategoryPage({ params }: Params) {
           ))}
         </div>
       )}
-    </CatalogShell>
+      </CatalogShell>
+    </>
   );
 }

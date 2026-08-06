@@ -1,4 +1,6 @@
 import HomeClient from "@/components/HomeClient";
+import JsonLd from "@/components/JsonLd";
+import { storeSchema } from "@/lib/schema";
 import { PublicDataProvider } from "@/features/publicData";
 import { fetchPublicData } from "@/features/publicData.server";
 
@@ -9,6 +11,7 @@ export default async function Page() {
   const data = await fetchPublicData();
   return (
     <PublicDataProvider value={data}>
+      <JsonLd data={storeSchema()} />
       <HomeClient />
     </PublicDataProvider>
   );

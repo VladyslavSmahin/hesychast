@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { mapProduct, PRODUCT_SELECT, type ProductRow } from "@/features/publicData.server";
 import type { Product } from "@/lib/types";
 
@@ -142,15 +143,23 @@ async function applyPromos(products: Product[]): Promise<void> {
   }
 }
 
-/** Усі slug-и доступних товарів і активних категорій — для sitemap. */
-export async function fetchAllSlugs(): Promise<{ products: string[]; categories: string[] }> {
-  const supabase = await createClient();
+export interface SitemapEntry {
+  slug: string;
+  createdAt: string | null;
+}
+
+/**
+ * Slug-и доступних товарів і активних категорій із датами — для sitemap.
+ * Навмисно клієнт без cookies: sitemap не залежить від користувача, інакше
+ * Next не може відрендерити маршрут і карта сайту лишається без товарів.
+ */
+export async function fetchAllSlugs(): Promise<{ products: SitemapEntry[]; categories: SitemapEntry[] }> {
+  const supabase = createAnonClient();
   const [prods, cats] = await Promise.all([
-    supabase.from("products").select("slug").eq("is_available", true),
-    supabase.from("categories").select("slug").eq("is_active", true),
+    supabase.from("products").select("slug, created_at").eq("is_available", true),
+    supabase.from("categories").select("slug, created_at").eq("is_active", true),
   ]);
-  return {
-    products: ((prods.data ?? []) as { slug: string }[]).map((r) => r.slug),
-    categories: ((cats.data ?? []) as { slug: string }[]).map((r) => r.slug),
-  };
+  const map = (rows: unknown) =>
+    ((rows ?? []) as { slug: string; created_at: string | null }[]).map((r) => ({ slug: r.slug, createdAt: r.created_at }));
+  return { products: map(prods.data), categories: map(cats.data) };
 }
