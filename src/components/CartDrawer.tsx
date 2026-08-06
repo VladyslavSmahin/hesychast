@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Icon } from "./icons";
 import { useCart } from "@/features/cart/CartContext";
+import NovaPoshtaPicker from "./NovaPoshtaPicker";
 import { usePublicCatalog, useGloss } from "@/features/publicData";
 import type { Product, CartItem } from "@/lib/types";
 
@@ -52,7 +53,13 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   const [delivery, setDelivery] = useState<Delivery>("nova_poshta");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  // Поле відділення — своє для кожного перевізника: перемкнувся на Укрпошту
+  // й назад — введене для Нової Пошти лишилось на місці.
+  const [addresses, setAddresses] = useState<Record<Delivery, string>>({
+    nova_poshta: "", ukrposhta: "", other: "",
+  });
+  const address = addresses[delivery];
+  const setAddress = (v: string) => setAddresses((prev) => ({ ...prev, [delivery]: v }));
   const [comment, setComment] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -97,6 +104,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
       if (!res.ok) throw new Error("request_failed");
       setStep("done");
       clear();
+      setAddresses({ nova_poshta: "", ukrposhta: "", other: "" });
     } catch {
       setError("Не вдалося надіслати замовлення. Спробуйте ще раз або зателефонуйте нам.");
     } finally {
@@ -198,8 +206,18 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 placeholder="093 728 42 98" value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))} />
 
-              <input className="form-input" placeholder={carrier.placeholder}
-                value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="off" />
+              {/* довідник Нової Пошти лишається змонтованим (ховаємо), щоб обране
+                  місто й відділення не губились при перемиканні перевізника */}
+              <div style={{ display: delivery === "nova_poshta" ? "block" : "none" }}>
+                <NovaPoshtaPicker
+                  value={addresses.nova_poshta}
+                  onChange={(v) => setAddresses((prev) => ({ ...prev, nova_poshta: v }))}
+                />
+              </div>
+              {delivery !== "nova_poshta" && (
+                <input className="form-input" placeholder={carrier.placeholder}
+                  value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="off" />
+              )}
 
               <textarea className="form-input" placeholder="Коментар до замовлення" value={comment} onChange={(e) => setComment(e.target.value)} style={{ minHeight: 80 }} />
             </div>
