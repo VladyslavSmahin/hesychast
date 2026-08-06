@@ -99,12 +99,6 @@ export default function ProductModal({
             <button className="btn-primary" style={{ width: "100%" }} onClick={() => { onAdd(item); onClose(); }}>
               Додати в кошик
             </button>
-            <a
-              href={`/tovar/${item.slug}`}
-              style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}
-            >
-              Відкрити сторінку товару →
-            </a>
           </div>
         </div>
       </div>
