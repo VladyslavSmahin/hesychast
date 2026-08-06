@@ -352,49 +352,13 @@ export async function dbReorderBanners(ids: string[]) {
   await Promise.all(ids.map((id, i) => supabase.from("banners").update({ sort_order: i }).eq("id", id)));
 }
 
-// ---------- Промокоди ----------
-export interface DbPromoCode { id: string; code: string; discountType: "percent" | "fixed"; value: number; isActive: boolean; }
-
-export function useDbPromoCodes() {
-  const supabase = useMemo(() => createClient(), []);
-  const [codes, setCodes] = useState<DbPromoCode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("promo_codes")
-      .select("id, code, discount_type, discount_value, is_active")
-      .order("created_at");
-    if (error) console.error("promo_codes:", error.message);
-    else setCodes((data ?? []).map((c) => ({
-      id: c.id, code: c.code, discountType: c.discount_type as "percent" | "fixed", value: Number(c.discount_value), isActive: c.is_active,
-    })));
-    setLoading(false);
-  }, [supabase]);
-  useEffect(() => { refetch(); }, [refetch]);
-  return { codes, loading, refetch };
-}
-
-export async function dbCreatePromoCode(input: { code: string; discountType: "percent" | "fixed"; value: number }): Promise<string | undefined> {
-  const { error } = await createClient().from("promo_codes").insert({
-    code: input.code, discount_type: input.discountType, discount_value: input.value, is_active: true,
-  });
-  return error?.message;
-}
-export async function dbSetPromoCodeActive(id: string, value: boolean) {
-  await createClient().from("promo_codes").update({ is_active: value }).eq("id", id);
-}
-export async function dbDeletePromoCode(id: string) {
-  await createClient().from("promo_codes").delete().eq("id", id);
-}
-
 // ---------- Замовлення ----------
 export type OrderStatus = "new" | "confirmed" | "done" | "canceled";
 export interface DbOrderItem { name: string; price: number; quantity: number; }
 export interface DbOrder {
   id: string; customerName: string; phone: string; deliveryType: "delivery" | "pickup";
   address: string | null; comment: string | null; status: OrderStatus;
-  subtotal: number; discount: number; deliveryCost: number; total: number;
+  subtotal: number; deliveryCost: number; total: number;
   createdAt: string; items: DbOrderItem[];
 }
 
@@ -412,7 +376,7 @@ export function useDbOrders() {
     else setOrders((data ?? []).map((o) => ({
       id: o.id, customerName: o.customer_name, phone: o.phone, deliveryType: o.delivery_type as "delivery" | "pickup",
       address: o.address, comment: o.comment, status: o.status as OrderStatus,
-      subtotal: Number(o.subtotal), discount: 0, deliveryCost: Number(o.delivery_cost), total: Number(o.total),
+      subtotal: Number(o.subtotal), deliveryCost: Number(o.delivery_cost), total: Number(o.total),
       createdAt: o.created_at,
       items: ((o.items ?? []) as { product_name: string; price: number; quantity: number }[])
         .map((it) => ({ name: it.product_name, price: Number(it.price), quantity: it.quantity })),

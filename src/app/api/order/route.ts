@@ -16,14 +16,11 @@ interface OrderBody {
   phone: string;
   address?: string;
   comment?: string;
-  promo?: string;
   consent?: boolean;
   items: IncomingItem[];
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// екранує спецсимволи LIKE (%, _, \), щоб ввід не змінював семантику пошуку
-const escapeLike = (s: string) => s.replace(/[\\%_]/g, (m) => "\\" + m);
 
 const MAX_LINE_ITEMS = 100; // макс. різних позицій у замовленні
 const MAX_QTY = 100;        // макс. кількість однієї позиції
@@ -41,7 +38,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "bad_json" }, { status: 400 });
   }
 
-  const { delivery, name, phone, address, comment, promo, consent, items } = body;
+  const { delivery, name, phone, address, comment, consent, items } = body;
 
   if (!name?.trim() || !phone?.trim() || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ ok: false, error: "missing_fields" }, { status: 400 });
@@ -72,10 +69,10 @@ export async function POST(req: Request) {
   if (ids.length) {
     const { data: prods } = await supabase
       .from("products")
-      .select("id, name, price, is_available, deleted_at")
+      .select("id, name, price, is_available")
       .in("id", ids);
     for (const p of prods ?? []) {
-      if (p.is_available && !p.deleted_at) fromDb.set(p.id, { name: p.name, price: Number(p.price) });
+      if (p.is_available) fromDb.set(p.id, { name: p.name, price: Number(p.price) });
     }
     // активні акції на ці товари — щоб ціна замовлення збігалася з тією, що бачить клієнт
     const { data: promos } = await supabase
@@ -119,33 +116,12 @@ export async function POST(req: Request) {
   }
   const subtotal = lineItems.reduce((s, i) => s + i.price * i.qty, 0);
 
-  // ---- Промокод (валідація + знижка на сервері) ----
-  let promoCodeId: string | null = null;
-  let discount = 0;
-  const code = promo?.trim().toUpperCase();
-  if (code) {
-    const { data: pc } = await supabase
-      .from("promo_codes")
-      .select("id, discount_type, discount_value, is_active, valid_until, usage_limit, used_count")
-      .ilike("code", escapeLike(code))
-      .maybeSingle();
-    const valid = pc && pc.is_active
-      && (!pc.valid_until || new Date(pc.valid_until) > new Date())
-      && (pc.usage_limit == null || pc.used_count < pc.usage_limit);
-    if (valid) {
-      promoCodeId = pc!.id;
-      const v = Number(pc!.discount_value);
-      discount = pc!.discount_type === "percent" ? Math.round((subtotal * v) / 100) : v;
-      discount = Math.min(discount, subtotal);
-    }
-  }
-
   // ---- Доставка ----
   // Вартість доставки рахується менеджером окремо (від 100 грн, залежно від відстані),
   // тому в замовленні delivery_cost = 0, а адреса йде в Telegram/адмінку для прорахунку.
   const deliveryCost = 0;
 
-  const total = Math.max(0, subtotal - discount);
+  const total = subtotal;
 
   // ---- Запис замовлення в БД (service role обходить RLS) ----
   let orderId: string | null = null;
@@ -160,8 +136,6 @@ export async function POST(req: Request) {
         address: delivery === "delivery" ? address?.trim() ?? null : null,
         comment: comment?.trim() || null,
         subtotal,
-        promo_code_id: promoCodeId,
-        discount,
         delivery_cost: deliveryCost,
         total,
         pd_consent_at: new Date().toISOString(),
@@ -183,19 +157,17 @@ export async function POST(req: Request) {
   // ---- Сповіщення в Telegram (за авторитетними цінами) ----
   const lines = lineItems.map((i) => `• ${esc(i.name)} × ${i.qty} — ${i.price * i.qty} грн`);
   const msg = [
-    "🍣 <b>НОВЕ ЗАМОВЛЕННЯ</b>",
+    "🛒 <b>НОВЕ ЗАМОВЛЕННЯ</b>",
     "",
     `👤 <b>Ім'я:</b> ${esc(name)}`,
     `📞 <b>Телефон:</b> ${esc(phone)}`,
     `🚚 <b>Спосіб:</b> ${delivery === "delivery" ? "Доставка" : "Самовивіз"}`,
     delivery === "delivery" && address ? `📍 <b>Адреса:</b> ${esc(address)}` : null,
-    code ? `🎟 <b>Промокод:</b> ${esc(code)}${discount ? ` (−${discount} грн)` : " (не застосовано)"}` : null,
     comment?.trim() ? `💬 <b>Коментар:</b> ${esc(comment)}` : null,
     "",
     "<b>Позиції:</b>",
     ...lines,
     "",
-    discount ? `Сума: ${subtotal} грн · Знижка: −${discount} грн` : null,
     deliveryCost > 0 ? `🚚 <b>Доставка:</b> ${deliveryCost} грн` : null,
     `💰 <b>Разом:</b> ${total} грн`,
     !dbSaved ? "\n⚠️ <i>Замовлення не збереглося в БД — перевірте адмінку</i>" : null,

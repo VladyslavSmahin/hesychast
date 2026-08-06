@@ -47,11 +47,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [comment, setComment] = useState("");
-  const [promo, setPromo] = useState("");
-  // застосований промокод (підтверджений сервером) + повідомлення/стан перевірки
-  const [promoInfo, setPromoInfo] = useState<{ code: string; discountType: "percent" | "fixed"; value: number } | null>(null);
-  const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [promoChecking, setPromoChecking] = useState(false);
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -64,46 +59,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
   if (!isOpen) return null;
 
-  // знижка рахується наживо з поточної суми (працює при зміні кількості)
-  const discount = promoInfo
-    ? Math.min(total, promoInfo.discountType === "percent" ? Math.round((total * promoInfo.value) / 100) : promoInfo.value)
-    : 0;
   // вартість доставки рахується менеджером окремо (від 100 грн, залежно від відстані)
-  const payable = Math.max(0, total - discount);
-
-  // зміна поля промокоду — скидаємо застосований код і повідомлення
-  const onPromoChange = (v: string) => {
-    setPromo(v);
-    if (promoInfo) setPromoInfo(null);
-    if (promoMsg) setPromoMsg(null);
-  };
-
-  // перевірка промокоду на сервері (без створення замовлення)
-  const applyPromo = async () => {
-    const code = promo.trim();
-    if (!code || promoChecking) return;
-    setPromoChecking(true);
-    setPromoMsg(null);
-    try {
-      const res = await fetch("/api/promo/check", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, subtotal: total }),
-      });
-      const j = await res.json();
-      if (res.status === 429) { setPromoMsg({ ok: false, text: "Забагато спроб, зачекайте хвилину." }); return; }
-      if (j.valid) {
-        setPromoInfo({ code, discountType: j.discountType, value: j.value });
-        setPromoMsg({ ok: true, text: `Промокод застосовано: −${j.discount} грн` });
-      } else {
-        setPromoInfo(null);
-        setPromoMsg({ ok: false, text: "Промокод неактуальний." });
-      }
-    } catch {
-      setPromoMsg({ ok: false, text: "Не вдалося перевірити промокод." });
-    } finally {
-      setPromoChecking(false);
-    }
-  };
+  const payable = total;
 
   const addrOk = delivery === "pickup" || !!address.trim();
   const phoneOk = isPhoneValid(phone);
@@ -129,12 +86,11 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ delivery, name, phone, address: fullAddress, comment, promo: promoInfo?.code ?? "", consent, items }),
+        body: JSON.stringify({ delivery, name, phone, address: fullAddress, comment, consent, items }),
       });
       if (!res.ok) throw new Error("request_failed");
       setStep("done");
       clear();
-      setPromo(""); setPromoInfo(null); setPromoMsg(null);
     } catch {
       setError("Не вдалося надіслати замовлення. Спробуйте ще раз або зателефонуйте нам.");
     } finally {
@@ -243,36 +199,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 </div>
               )}
 
-              <div>
-                <div style={{ position: "relative" }}>
-                  <input
-                    className="form-input"
-                    placeholder="Промокод"
-                    value={promo}
-                    onChange={(e) => onPromoChange(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
-                    style={{ paddingRight: 124, textTransform: "uppercase" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={applyPromo}
-                    disabled={!promo.trim() || promoChecking || !!promoInfo}
-                    style={{
-                      position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                      padding: "8px 16px", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase",
-                      border: "1px solid var(--border-light)", borderRadius: 4, cursor: "pointer",
-                      background: promoInfo ? "transparent" : "var(--bg-elevated)",
-                      color: promoInfo ? "var(--accent)" : "var(--text-primary)",
-                      opacity: !promo.trim() || promoChecking ? 0.5 : 1, transition: "all 0.2s",
-                    }}
-                  >
-                    {promoChecking ? "…" : promoInfo ? "✓" : "Застосувати"}
-                  </button>
-                </div>
-                {promoMsg && (
-                  <p style={{ fontSize: 11, marginTop: 6, lineHeight: 1.4, color: promoMsg.ok ? "var(--accent)" : "#E0726A" }}>{promoMsg.text}</p>
-                )}
-              </div>
               <textarea className="form-input" placeholder="Коментар до замовлення" value={comment} onChange={(e) => setComment(e.target.value)} style={{ minHeight: 80 }} />
             </div>
 
@@ -283,12 +209,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }}>
                   <span>Доставка</span>
                   <span>від 100 грн (за відстанню)</span>
-                </div>
-              )}
-              {discount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--accent)", marginBottom: 6 }}>
-                  <span>Знижка{promoInfo ? ` (${promoInfo.code})` : ""}</span>
-                  <span>−{discount} грн</span>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>

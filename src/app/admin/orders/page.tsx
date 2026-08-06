@@ -121,7 +121,6 @@ export default function OrdersPage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", fontSize: 13 }}>
-              {selected.discount > 0 && <span style={{ color: "var(--text-secondary)" }}>Знижка: −{selected.discount} грн</span>}
               {selected.deliveryType === "delivery" && <span style={{ color: "var(--text-secondary)" }}>Доставка: {selected.deliveryCost} грн</span>}
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: "var(--text-primary)", fontSize: 16 }}>Разом: {selected.total} грн</span>
             </div>
