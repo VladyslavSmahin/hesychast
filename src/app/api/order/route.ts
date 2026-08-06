@@ -10,8 +10,17 @@ interface IncomingItem {
   qty: number;
 }
 
+type Carrier = "nova_poshta" | "ukrposhta" | "other";
+
+// Підписи перевізників для Telegram і валідації (самовивозу немає)
+const CARRIER_LABEL: Record<Carrier, string> = {
+  nova_poshta: "Нова Пошта",
+  ukrposhta: "Укрпошта",
+  other: "Інше (див. коментар)",
+};
+
 interface OrderBody {
-  delivery: "delivery" | "pickup";
+  delivery: Carrier;
   name: string;
   phone: string;
   address?: string;
@@ -52,7 +61,11 @@ export async function POST(req: Request) {
   if (consent !== true) {
     return NextResponse.json({ ok: false, error: "consent_required" }, { status: 400 });
   }
-  if (delivery === "delivery" && !address?.trim()) {
+  if (!CARRIER_LABEL[delivery]) {
+    return NextResponse.json({ ok: false, error: "bad_delivery" }, { status: 400 });
+  }
+  // відділення (або опис способу для «інше») обовʼязкове — без нього нема куди слати
+  if (!address?.trim()) {
     return NextResponse.json({ ok: false, error: "address_required" }, { status: 400 });
   }
   // ліміти довжини текстових полів (анти-спам/абʼюз)
@@ -116,11 +129,7 @@ export async function POST(req: Request) {
   }
   const subtotal = lineItems.reduce((s, i) => s + i.price * i.qty, 0);
 
-  // ---- Доставка ----
-  // Вартість доставки рахується менеджером окремо (від 100 грн, залежно від відстані),
-  // тому в замовленні delivery_cost = 0, а адреса йде в Telegram/адмінку для прорахунку.
-  const deliveryCost = 0;
-
+  // Вартість доставки не рахуємо взагалі — її називає менеджер при підтвердженні.
   const total = subtotal;
 
   // ---- Запис замовлення в БД (service role обходить RLS) ----
@@ -133,10 +142,9 @@ export async function POST(req: Request) {
         customer_name: name.trim(),
         phone: phone.trim(),
         delivery_type: delivery,
-        address: delivery === "delivery" ? address?.trim() ?? null : null,
+        address: address.trim(),
         comment: comment?.trim() || null,
         subtotal,
-        delivery_cost: deliveryCost,
         total,
         pd_consent_at: new Date().toISOString(),
       })
@@ -161,14 +169,13 @@ export async function POST(req: Request) {
     "",
     `👤 <b>Ім'я:</b> ${esc(name)}`,
     `📞 <b>Телефон:</b> ${esc(phone)}`,
-    `🚚 <b>Спосіб:</b> ${delivery === "delivery" ? "Доставка" : "Самовивіз"}`,
-    delivery === "delivery" && address ? `📍 <b>Адреса:</b> ${esc(address)}` : null,
+    `🚚 <b>Доставка:</b> ${CARRIER_LABEL[delivery]}`,
+    `📍 <b>Відділення:</b> ${esc(address)}`,
     comment?.trim() ? `💬 <b>Коментар:</b> ${esc(comment)}` : null,
     "",
     "<b>Позиції:</b>",
     ...lines,
     "",
-    deliveryCost > 0 ? `🚚 <b>Доставка:</b> ${deliveryCost} грн` : null,
     `💰 <b>Разом:</b> ${total} грн`,
     !dbSaved ? "\n⚠️ <i>Замовлення не збереглося в БД — перевірте адмінку</i>" : null,
   ]

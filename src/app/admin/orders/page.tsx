@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Modal from "@/components/admin/Modal";
-import { useDbOrders, dbSetOrderStatus, type DbOrder, type OrderStatus } from "@/features/admin/db";
+import { useDbOrders, dbSetOrderStatus, CARRIER_LABEL, type DbOrder, type OrderStatus } from "@/features/admin/db";
 import s from "@/components/admin/admin.module.css";
 
 const STATUSES: { value: OrderStatus; label: string }[] = [
@@ -76,7 +76,7 @@ export default function OrdersPage() {
                   <td data-label="Клієнт" style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>{o.customerName}</td>
                   <td data-label="Телефон" style={{ color: "var(--text-secondary)" }}>{o.phone}</td>
                   <td data-label="Час" style={{ color: "var(--text-secondary)" }}>{timeLabel(o.createdAt)}</td>
-                  <td data-label="Тип" style={{ color: "var(--text-secondary)" }}>{o.deliveryType === "delivery" ? "Доставка" : "Самовивіз"}</td>
+                  <td data-label="Тип" style={{ color: "var(--text-secondary)" }}>{CARRIER_LABEL[o.deliveryType] ?? o.deliveryType}</td>
                   <td data-label="Сума" style={{ textAlign: "right", fontWeight: 700 }}>{o.total} грн</td>
                 </tr>
               ))}
@@ -91,7 +91,7 @@ export default function OrdersPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span className={`${s.pill} ${statusPill(selected.status)}`}>{statusLabel(selected.status)}</span>
               <a href={`tel:${selected.phone}`} style={{ color: "var(--accent)" }}>{selected.phone}</a>
-              <span className={s.hint} style={{ fontSize: 12 }}>{timeLabel(selected.createdAt)} · {selected.deliveryType === "delivery" ? "Доставка" : "Самовивіз"}</span>
+              <span className={s.hint} style={{ fontSize: 12 }}>{timeLabel(selected.createdAt)} · {CARRIER_LABEL[selected.deliveryType] ?? selected.deliveryType}</span>
             </div>
 
             <div className={s.field}>
@@ -121,7 +121,6 @@ export default function OrdersPage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end", fontSize: 13 }}>
-              {selected.deliveryType === "delivery" && <span style={{ color: "var(--text-secondary)" }}>Доставка: {selected.deliveryCost} грн</span>}
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: "var(--text-primary)", fontSize: 16 }}>Разом: {selected.total} грн</span>
             </div>
           </div>

@@ -274,11 +274,19 @@ export async function dbReorderBanners(ids: string[]) {
 
 // ---------- Замовлення ----------
 export type OrderStatus = "new" | "confirmed" | "done" | "canceled";
+
+/** Перевізник замовлення (самовивозу немає — крамниця відправляє поштою). */
+export type Carrier = "nova_poshta" | "ukrposhta" | "other";
+export const CARRIER_LABEL: Record<Carrier, string> = {
+  nova_poshta: "Нова Пошта",
+  ukrposhta: "Укрпошта",
+  other: "Інше",
+};
 export interface DbOrderItem { name: string; price: number; quantity: number; }
 export interface DbOrder {
-  id: string; customerName: string; phone: string; deliveryType: "delivery" | "pickup";
+  id: string; customerName: string; phone: string; deliveryType: Carrier;
   address: string | null; comment: string | null; status: OrderStatus;
-  subtotal: number; deliveryCost: number; total: number;
+  subtotal: number; total: number;
   createdAt: string; items: DbOrderItem[];
 }
 
@@ -290,13 +298,13 @@ export function useDbOrders() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, delivery_cost, total, created_at, items:order_items(product_name, price, quantity)")
+      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, total, created_at, items:order_items(product_name, price, quantity)")
       .order("created_at", { ascending: false });
     if (error) console.error("orders:", error.message);
     else setOrders((data ?? []).map((o) => ({
-      id: o.id, customerName: o.customer_name, phone: o.phone, deliveryType: o.delivery_type as "delivery" | "pickup",
+      id: o.id, customerName: o.customer_name, phone: o.phone, deliveryType: o.delivery_type as Carrier,
       address: o.address, comment: o.comment, status: o.status as OrderStatus,
-      subtotal: Number(o.subtotal), deliveryCost: Number(o.delivery_cost), total: Number(o.total),
+      subtotal: Number(o.subtotal), total: Number(o.total),
       createdAt: o.created_at,
       items: ((o.items ?? []) as { product_name: string; price: number; quantity: number }[])
         .map((it) => ({ name: it.product_name, price: Number(it.price), quantity: it.quantity })),

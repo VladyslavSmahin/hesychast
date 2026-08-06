@@ -15,7 +15,14 @@ const qtyBtn: CSSProperties = {
 };
 
 type Step = "cart" | "checkout" | "done";
-type Delivery = "delivery" | "pickup";
+// Перевізник. Самовивозу немає — крамниця відправляє поштою.
+type Delivery = "nova_poshta" | "ukrposhta" | "other";
+
+const CARRIERS: { value: Delivery; label: string; placeholder: string }[] = [
+  { value: "nova_poshta", label: "Нова Пошта", placeholder: "Місто та № відділення * (напр. Київ, №12)" },
+  { value: "ukrposhta",   label: "Укрпошта",   placeholder: "Місто, відділення або індекс *" },
+  { value: "other",       label: "Інше",       placeholder: "Опишіть спосіб доставки *" },
+];
 
 // Український номер: лише цифри, формат «093 728 42 98» (10 цифр, починається з 0).
 function phoneDigits(raw: string): string {
@@ -42,7 +49,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   );
   const [step, setStep] = useState<Step>("cart");
 
-  const [delivery, setDelivery] = useState<Delivery>("delivery");
+  const [delivery, setDelivery] = useState<Delivery>("nova_poshta");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -59,21 +66,20 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
   if (!isOpen) return null;
 
-  // вартість доставки рахується менеджером окремо (від 100 грн, залежно від відстані)
+  // Вартість доставки не рахуємо — її називає менеджер при підтвердженні.
   const payable = total;
 
-  const addrOk = delivery === "pickup" || !!address.trim();
+  const carrier = CARRIERS.find((c) => c.value === delivery)!;
+  const addrOk = !!address.trim();
   const phoneOk = isPhoneValid(phone);
   const canSubmit = !!name.trim() && phoneOk && addrOk && consent;
-
-  const fullAddress = delivery === "delivery" ? address.trim() : "";
 
   // причина, чому кнопка «Підтвердити» неактивна (показуємо користувачу)
   const submitHint =
     !name.trim() ? "Вкажіть ім'я"
     : !phone.trim() ? "Вкажіть телефон"
     : !phoneOk ? "Невірний формат номера (напр. 093 728 42 98)"
-    : delivery === "delivery" && !address.trim() ? "Вкажіть адресу доставки"
+    : !address.trim() ? "Вкажіть відділення або спосіб доставки"
     : !consent ? "Підтвердіть згоду на обробку персональних даних"
     : "";
 
@@ -86,7 +92,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ delivery, name, phone, address: fullAddress, comment, consent, items }),
+        body: JSON.stringify({ delivery, name, phone, address: address.trim(), comment, consent, items }),
       });
       if (!res.ok) throw new Error("request_failed");
       setStep("done");
@@ -172,16 +178,19 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         ) : (
           <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                {([["delivery", "Доставка"], ["pickup", "Самовивіз"]] as const).map(([val, label]) => (
-                  <button key={val} type="button" onClick={() => setDelivery(val)}
-                    style={{ flex: 1, padding: "12px 0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 11, letterSpacing: 2, textTransform: "uppercase",
-                      background: delivery === val ? "var(--bg-elevated)" : "transparent",
-                      border: `1px solid ${delivery === val ? "var(--accent)" : "var(--border-light)"}`,
-                      color: delivery === val ? "var(--accent)" : "var(--text-secondary)" }}>
-                    {label}
-                  </button>
-                ))}
+              <div>
+                <span className="eyebrow" style={{ display: "block", marginBottom: 8, fontSize: 10 }}>Спосіб доставки</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {CARRIERS.map(({ value, label }) => (
+                    <button key={value} type="button" onClick={() => setDelivery(value)}
+                      style={{ flex: 1, padding: "12px 4px", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase",
+                        background: delivery === value ? "var(--bg-elevated)" : "transparent",
+                        border: `1px solid ${delivery === value ? "var(--accent)" : "var(--border-light)"}`,
+                        color: delivery === value ? "var(--accent)" : "var(--text-secondary)" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <input className="form-input" placeholder="Ім'я *" value={name} onChange={(e) => setName(e.target.value)} />
@@ -189,15 +198,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 placeholder="093 728 42 98" value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))} />
 
-              {delivery === "delivery" && (
-                <div>
-                  <input className="form-input" placeholder="Адреса доставки * (вулиця, будинок, квартира)"
-                    value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="off" />
-                  <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6, lineHeight: 1.5 }}>
-                    Доставка — від 100 грн, далі залежно від відстані. Точну вартість підтвердимо при дзвінку.
-                  </p>
-                </div>
-              )}
+              <input className="form-input" placeholder={carrier.placeholder}
+                value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="off" />
 
               <textarea className="form-input" placeholder="Коментар до замовлення" value={comment} onChange={(e) => setComment(e.target.value)} style={{ minHeight: 80 }} />
             </div>
@@ -205,12 +207,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             <div style={{ borderTop: "1px solid var(--border)", padding: "20px 28px 28px" }}>
               {error && <p style={{ fontSize: 11, color: "#E0726A", marginBottom: 14, lineHeight: 1.5 }}>{error}</p>}
 
-              {delivery === "delivery" && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }}>
-                  <span>Доставка</span>
-                  <span>від 100 грн (за відстанню)</span>
-                </div>
-              )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
                 <span style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)" }}>До сплати</span>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 700, color: "var(--text-primary)" }}>{payable} грн</span>
