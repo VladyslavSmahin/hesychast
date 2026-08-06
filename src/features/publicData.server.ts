@@ -8,17 +8,22 @@ import { parseGlossary } from "@/lib/glossary";
 
 const num = (v: unknown) => (v == null ? 0 : Number(v));
 
-type ProductRow = {
-  id: string; name: string; description: string | null;
+export type ProductRow = {
+  id: string; slug: string; name: string; description: string | null;
   price: number | string; weight: string | null; badge: string | null; image_path: string | null;
   category: { slug: string } | { slug: string }[] | null;
 };
 
-function mapProduct(p: ProductRow): Product {
+/** Поля товару, які потрібні витрині (спільний select для всіх публічних запитів). */
+export const PRODUCT_SELECT =
+  "id, slug, name, description, price, weight, badge, image_path, sort_order, category:categories(slug)";
+
+export function mapProduct(p: ProductRow): Product {
   const cat = p.category;
   const categorySlug = Array.isArray(cat) ? cat[0]?.slug ?? "" : cat?.slug ?? "";
   return {
     id: p.id,
+    slug: p.slug,
     name: p.name,
     desc: p.description ?? "",
     fullDesc: p.description ?? "",
@@ -41,7 +46,7 @@ export async function fetchPublicData(): Promise<PublicData> {
     supabase.from("categories").select("id, name, slug, sort_order, show_in_nav, is_active").order("sort_order"),
     supabase
       .from("products")
-      .select("id, name, description, price, weight, badge, image_path, sort_order, category:categories(slug)")
+      .select(PRODUCT_SELECT)
       .eq("is_available", true)
       .order("sort_order"),
     supabase.from("promos").select("id, promo_price, valid_from, valid_until, product:products(id)").eq("is_active", true).order("sort_order"),

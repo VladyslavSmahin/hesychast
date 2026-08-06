@@ -21,12 +21,10 @@ const parseWeight = (w: string) => {
 
 export default function FullMenu({
   onAdd,
-  onCardClick,
   navFilter,
   setNavFilter,
 }: {
   onAdd: (item: Product) => void;
-  onCardClick: (item: Product) => void;
   navFilter: NavFilter | null;
   setNavFilter: (f: NavFilter | null) => void;
 }) {
@@ -179,7 +177,7 @@ export default function FullMenu({
           <>
             <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 20 }}>
               {shown.map((item) => (
-                <MenuCard key={item.id} item={item} onAdd={onAdd} onClick={() => onCardClick(item)} />
+                <MenuCard key={item.id} item={item} onAdd={onAdd} />
               ))}
             </div>
 

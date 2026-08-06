@@ -34,8 +34,8 @@ export default function Footer() {
       <div style={{ maxWidth: 1440, margin: "0 auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "var(--footer-cols)", gap: "var(--footer-gap)", marginBottom: 64 }}>
           <div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, letterSpacing: 4, textTransform: "uppercase", color: "var(--text-primary)" }}>
-              Sushi<span style={{ color: "var(--accent)", margin: "0 4px" }}>·</span>Syndicate
+            <div style={{ fontFamily: "var(--font-church)", fontSize: 22, fontWeight: 700, letterSpacing: 4, textTransform: "uppercase", color: "var(--text-primary)" }}>
+              ІСИХАСТ
             </div>
             <p style={{ fontSize: 15, fontWeight: 400, color: "var(--text-secondary)", lineHeight: 1.7, marginTop: 20, maxWidth: 280 }}>
               {TEXTS.footerTagline}

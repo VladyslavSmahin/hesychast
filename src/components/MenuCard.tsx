@@ -1,18 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { Icon, PhotoSlot } from "./icons";
 import { useGloss } from "@/features/publicData";
 import type { Product } from "@/lib/types";
 
+// Картка — це посилання на /tovar/<slug>. Клік усередині сайту перехоплюється
+// паралельним маршрутом і відкриває модалку (адреса при цьому змінюється),
+// а пошуковик бачить звичайне <a href> і доходить до сторінки товару.
 export default function MenuCard({
   item,
   onAdd,
-  onClick,
   compact = false,
 }: {
   item: Product;
   onAdd: (item: Product) => void;
-  onClick: () => void;
   /** компактний варіант (для блоку «Хіти меню») */
   compact?: boolean;
 }) {
@@ -26,13 +28,14 @@ export default function MenuCard({
   const addSize = compact ? 30 : 34;
 
   return (
-    <div
+    <Link
+      href={`/tovar/${item.slug}`}
       className="menu-card fade-up"
-      onClick={onClick}
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border)",
         cursor: "pointer", display: "flex", flexDirection: "column", padding: pad,
+        textDecoration: "none", color: "inherit",
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: compact ? undefined : "var(--card-ar, 16 / 9)" }}>
@@ -70,7 +73,8 @@ export default function MenuCard({
           </div>
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); onAdd(item); }}
+          // всередині посилання: гасимо перехід, щоб «+» лише клав товар у кошик
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(item); }}
           aria-label="Додати"
           style={{
             width: addSize, height: addSize, flexShrink: 0, background: "var(--bg-elevated)", border: "1px solid var(--border-light)",
@@ -83,6 +87,6 @@ export default function MenuCard({
           <Icon.Plus width="13" height="13" />
         </button>
       </div>
-    </div>
+    </Link>
   );
 }

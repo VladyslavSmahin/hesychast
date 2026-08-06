@@ -39,7 +39,7 @@ export default function MapSection() {
 
         <div style={{ display: "grid", gridTemplateColumns: "var(--map-cols)", gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}>
           <iframe
-            title="Google Maps — Sushi Syndicate"
+            title="Google Maps — ІСИХАСТ"
             src={`https://www.google.com/maps?q=${encodeURIComponent(CONTACTS.mapQuery)}&z=16&output=embed`}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"

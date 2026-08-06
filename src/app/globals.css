@@ -241,7 +241,7 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
   .hero-slider { order: 2; }
   .hero-cta { order: 3; width: 100%; }
   .hero-title, .hero-tagline, .hero-lead { display: none; }
-  /* «Sushi Syndicate» — в один рядок */
+  /* назва бренду — в один рядок */
   .hero-title { font-size: clamp(24px, 9vw, 40px) !important; white-space: nowrap; }
   .hero-br { display: none; }
   /* дві кнопки — в один ряд */

@@ -16,6 +16,8 @@ export interface Portion {
 export interface Product {
   /** ідентифікатор товару (рядок — узгоджено з адмін-сховищем / майбутніми uuid Supabase) */
   id: string;
+  /** ЧПУ-ідентифікатор для адреси сторінки товару: /tovar/<slug> */
+  slug: string;
   name: string;
   /** короткий опис на картці */
   desc: string;

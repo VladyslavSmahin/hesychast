@@ -3,8 +3,8 @@ import InfoPageShell from "@/components/InfoPageShell";
 import { CONTACTS } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Політика конфіденційності — Sushi Syndicate",
-  description: "Як ми збираємо, використовуємо та захищаємо ваші персональні дані. Політика конфіденційності Sushi Syndicate.",
+  title: "Політика конфіденційності",
+  description: "Як крамниця ІСИХАСТ збирає, використовує та захищає ваші персональні дані.",
 };
 
 const h2: React.CSSProperties = { fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, margin: "30px 0 12px", color: "var(--text-primary)" };

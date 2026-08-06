@@ -11,11 +11,10 @@ import MapSection from "./MapSection";
 import AboutSection from "./AboutSection";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
-import ProductModal from "./ProductModal";
 import MobileMenu from "./MobileMenu";
 import MobileCategoryBar from "./MobileCategoryBar";
 import { useCart } from "@/features/cart/CartContext";
-import type { Product, NavCategory } from "@/lib/types";
+import type { NavCategory } from "@/lib/types";
 
 type NavFilter = NonNullable<NavCategory["filter"]>;
 
@@ -24,7 +23,6 @@ const HEADER_OFFSET = 84;
 export default function HomeClient() {
   const { add } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
-  const [modalItem, setModalItem] = useState<Product | null>(null);
   const [navFilter, setNavFilter] = useState<NavFilter | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -60,10 +58,9 @@ export default function HomeClient() {
         onCtaOrder={() => setCartOpen(true)}
         onCtaMenu={() => scrollTo("menu")}
       />
-      <Hits onAdd={add} onCardClick={setModalItem} />
+      <Hits onAdd={add} />
       <FullMenu
         onAdd={add}
-        onCardClick={setModalItem}
         navFilter={navFilter}
         setNavFilter={setNavFilter}
       />
@@ -73,7 +70,6 @@ export default function HomeClient() {
       <AboutSection />
       <Footer />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-      <ProductModal item={modalItem} onClose={() => setModalItem(null)} onAdd={add} />
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} onNavClick={handleNavClick} />
       <MobileCategoryBar active={navFilter} onNavClick={handleNavClick} />
     </>

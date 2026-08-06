@@ -77,7 +77,7 @@ export default function ProductModal({
           </h2>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 18 }}>
             <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)" }}>
-              {item.pieces}{item.pieces && item.weight ? " · " : ""}{item.weight}
+              {item.weight}
             </span>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: item.oldPrice ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, whiteSpace: "nowrap" }}>
               {item.oldPrice && <span style={{ fontSize: 17, fontWeight: 400, color: "var(--text-secondary)", textDecoration: "line-through", marginRight: 8 }}>{item.oldPrice}</span>}
@@ -85,16 +85,12 @@ export default function ProductModal({
             </span>
           </div>
 
-          <div>
-            <div className="eyebrow" style={{ marginBottom: 8, fontSize: 11 }}>Склад</div>
-            <p style={{ fontSize: 15, fontWeight: 300, color: "var(--text-primary)", lineHeight: 1.6, opacity: 0.9 }}>
-              {item.composition.toLowerCase()}
-            </p>
-          </div>
-
-          {item.portion && item.portion.weight > 0 && (
-            <div style={{ marginTop: 2, marginBottom: 14, fontSize: 11, lineHeight: 1.5, color: "var(--text-secondary)" }}>
-              {item.portion.kcal} ккал / {item.portion.protein} г білки / {item.portion.fat} г жири / {item.portion.carbs} г вугл.
+          {item.desc && (
+            <div>
+              <div className="eyebrow" style={{ marginBottom: 8, fontSize: 11 }}>Опис</div>
+              <p style={{ fontSize: 15, fontWeight: 300, color: "var(--text-primary)", lineHeight: 1.6, opacity: 0.9 }}>
+                {item.desc}
+              </p>
             </div>
           )}
 
@@ -102,6 +98,12 @@ export default function ProductModal({
             <button className="btn-primary" style={{ width: "100%" }} onClick={() => { onAdd(item); onClose(); }}>
               Додати в кошик
             </button>
+            <a
+              href={`/tovar/${item.slug}`}
+              style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}
+            >
+              Відкрити сторінку товару →
+            </a>
           </div>
         </div>
       </div>

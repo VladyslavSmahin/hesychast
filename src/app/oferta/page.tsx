@@ -3,8 +3,8 @@ import InfoPageShell from "@/components/InfoPageShell";
 import { CONTACTS } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Договір публічної оферти — Sushi Syndicate",
-  description: "Умови продажу та доставки. Договір публічної оферти Sushi Syndicate.",
+  title: "Договір публічної оферти",
+  description: "Умови продажу та доставки товарів крамниці ІСИХАСТ. Договір публічної оферти.",
 };
 
 const h2: React.CSSProperties = { fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, margin: "30px 0 12px", color: "var(--text-primary)" };
