@@ -11,8 +11,10 @@ const PER_PAGE = 4;
 
 export default function Hits({
   onAdd,
+  onCardClick,
 }: {
   onAdd: (item: Product) => void;
+  onCardClick: (item: Product) => void;
 }) {
   const isMobile = useIsMobile();
   const catalog = usePublicCatalog();
@@ -86,7 +88,7 @@ export default function Hits({
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 20 }}>
             {visible.map((item) => (
-              <MenuCard key={item.id} item={item} onAdd={onAdd} compact />
+              <MenuCard key={item.id} item={item} onAdd={onAdd} onCardClick={onCardClick} compact />
             ))}
           </div>
         )}

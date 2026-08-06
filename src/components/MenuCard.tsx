@@ -5,16 +5,18 @@ import { Icon, PhotoSlot } from "./icons";
 import { useGloss } from "@/features/publicData";
 import type { Product } from "@/lib/types";
 
-// Картка — це посилання на /tovar/<slug>. Клік усередині сайту перехоплюється
-// паралельним маршрутом і відкриває модалку (адреса при цьому змінюється),
-// а пошуковик бачить звичайне <a href> і доходить до сторінки товару.
+// Картка — це посилання на /tovar/<slug>: пошуковик бачить звичайне <a href>
+// і доходить до сторінки товару. Клік користувача перехоплюємо самі — відкриваємо
+// модалку й лише міняємо адресу в рядку браузера (див. HomeClient).
 export default function MenuCard({
   item,
   onAdd,
+  onCardClick,
   compact = false,
 }: {
   item: Product;
   onAdd: (item: Product) => void;
+  onCardClick: (item: Product) => void;
   /** компактний варіант (для блоку «Хіти меню») */
   compact?: boolean;
 }) {
@@ -30,6 +32,13 @@ export default function MenuCard({
   return (
     <Link
       href={`/tovar/${item.slug}`}
+      onClick={(e) => {
+        // звичайний клік лишається в каталозі — відкриваємо модалку;
+        // Ctrl/Cmd/середня кнопка працюють як завжди (нова вкладка)
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        onCardClick(item);
+      }}
       className="menu-card fade-up"
       style={{
         background: "var(--bg-card)",

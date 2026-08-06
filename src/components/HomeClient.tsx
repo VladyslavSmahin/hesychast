@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Header from "./Header";
+import ProductModal from "./ProductModal";
 import Hero from "./Hero";
 import Hits from "./Hits";
 import FullMenu from "./FullMenu";
@@ -14,7 +15,7 @@ import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import MobileCategoryBar from "./MobileCategoryBar";
 import { useCart } from "@/features/cart/CartContext";
-import type { NavCategory } from "@/lib/types";
+import type { NavCategory, Product } from "@/lib/types";
 
 type NavFilter = NonNullable<NavCategory["filter"]>;
 
@@ -25,6 +26,28 @@ export default function HomeClient() {
   const [cartOpen, setCartOpen] = useState(false);
   const [navFilter, setNavFilter] = useState<NavFilter | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [modalItem, setModalItem] = useState<Product | null>(null);
+
+  // Товар відкривається модалкою поверх каталогу, але адреса змінюється на
+  // /tovar/<slug> — посилання можна скопіювати, а «назад» повертає в каталог.
+  // Сторінку товару віддає сервер при прямому заході (її ж бачить пошуковик).
+  const openProduct = useCallback((item: Product) => {
+    setModalItem(item);
+    window.history.pushState({ modal: item.slug }, "", `/tovar/${item.slug}`);
+  }, []);
+
+  const closeProduct = useCallback(() => {
+    setModalItem(null);
+    // повертаємось на попередню адресу, якщо модалку відкривали кліком
+    if (window.history.state?.modal) window.history.back();
+  }, []);
+
+  // кнопка «назад» у браузері має закривати модалку, а не лишати її відкритою
+  useEffect(() => {
+    const onPop = () => setModalItem(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -58,9 +81,10 @@ export default function HomeClient() {
         onCtaOrder={() => setCartOpen(true)}
         onCtaMenu={() => scrollTo("menu")}
       />
-      <Hits onAdd={add} />
+      <Hits onAdd={add} onCardClick={openProduct} />
       <FullMenu
         onAdd={add}
+        onCardClick={openProduct}
         navFilter={navFilter}
         setNavFilter={setNavFilter}
       />
@@ -70,6 +94,7 @@ export default function HomeClient() {
       <AboutSection />
       <Footer />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <ProductModal item={modalItem} onClose={closeProduct} onAdd={add} />
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} onNavClick={handleNavClick} />
       <MobileCategoryBar active={navFilter} onNavClick={handleNavClick} />
     </>

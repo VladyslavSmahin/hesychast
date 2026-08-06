@@ -53,19 +53,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  modal,
 }: {
   children: React.ReactNode;
-  /** паралельний слот для модалки товару (перехоплений маршрут /tovar/<slug>) */
-  modal: React.ReactNode;
 }) {
   return (
     <html lang="uk" className={`${cormorant.variable} ${jost.variable} ${church.variable}`}>
       <body>
-        <CartProvider>
-          {children}
-          {modal}
-        </CartProvider>
+        <CartProvider>{children}</CartProvider>
         <Analytics />
         <SpeedInsights />
       </body>
