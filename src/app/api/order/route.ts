@@ -189,5 +189,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "save_failed" }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, orderId });
+  // notified видно в devtools і при перевірці curl-ом: якщо false — у Vercel
+  // не задані (або невірні) TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID
+  return NextResponse.json({ ok: true, orderId, saved: dbSaved, notified: sent });
 }
