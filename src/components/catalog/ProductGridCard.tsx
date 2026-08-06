@@ -15,7 +15,7 @@ export default function ProductGridCard({ item }: { item: Product }) {
         display: "flex", flexDirection: "column", padding: 14, textDecoration: "none", color: "inherit",
       }}
     >
-      <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: "var(--card-ar, 16 / 9)" }}>
+      <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: "var(--card-ar, 1 / 1)" }}>
         <PhotoSlot h="100%" photo={item.photo} alt={item.name} />
       </div>
 
