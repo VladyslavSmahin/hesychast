@@ -47,8 +47,12 @@ supabase db pull
 - Перед push — рев'ю SQL у PR, як звичайний код.
 - Секрети (Google OAuth, service-role) — у змінних оточення Vercel/Supabase, не в git.
 
+## Storage
+- Бакет **`media`** (публічний, ліміт 8 МБ, лише image/*) — фото товарів (`products/`)
+  та банери (`banners/`). Створений через Storage API; читання публічне,
+  запис — тільки service-role з сервера (`src/lib/storage.ts`).
+
 ## Що далі (наступні міграції)
 - `create_order(...)` RPC: транзакційне створення `orders` + `order_items`
-  з перерахунком суми та валідацією промокоду на сервері.
-- Storage-бакет `products` (публічний) для фото товарів.
+  з перерахунком суми на сервері.
 - Realtime/тригери для подій (за потреби).

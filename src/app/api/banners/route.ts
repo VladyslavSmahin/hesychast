@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isStaff } from "@/lib/adminAuth";
 import { convertAndUpload } from "@/lib/imageUpload";
-import { r2Delete, r2KeyFromUrl } from "@/lib/r2";
+import { storageDelete, storageKeyFromUrl } from "@/lib/storage";
 
 // sharp потребує Node-рантайму (не edge).
 export const runtime = "nodejs";
 
 // POST /api/banners — завантаження банера (multipart, поле "file").
-// Конвертує у WebP, кладе в R2, пише рядок у banners. Повертає { id, imagePath }.
+// Конвертує у WebP, кладе в Storage, пише рядок у banners. Повертає { id, imagePath }.
 export async function POST(req: Request) {
   if (!(await isStaff())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
@@ -35,9 +35,9 @@ export async function POST(req: Request) {
     .select("id")
     .single();
   if (error) {
-    // прибираємо завантажений файл, щоб не лишати сміття в R2
-    const key = r2KeyFromUrl(up.url);
-    if (key) { try { await r2Delete(key); } catch { /* best-effort */ } }
+    // прибираємо завантажений файл, щоб не лишати сміття у сховищі
+    const key = storageKeyFromUrl(up.url);
+    if (key) { try { await storageDelete(key); } catch { /* best-effort */ } }
     console.error("banner insert failed:", error.message);
     return NextResponse.json({ ok: false, error: "db_failed" }, { status: 500 });
   }
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, id: data.id, imagePath: up.url });
 }
 
-// DELETE /api/banners — видалення банера (JSON { id }). Прибирає рядок і файл у R2.
+// DELETE /api/banners — видалення банера (JSON { id }). Прибирає рядок і файл у Storage.
 export async function DELETE(req: Request) {
   if (!(await isStaff())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
@@ -68,8 +68,8 @@ export async function DELETE(req: Request) {
   }
 
   if (row?.image_path) {
-    const key = r2KeyFromUrl(row.image_path);
-    if (key) { try { await r2Delete(key); } catch (e) { console.error("r2 delete:", (e as Error).message); } }
+    const key = storageKeyFromUrl(row.image_path);
+    if (key) { try { await storageDelete(key); } catch (e) { console.error("storage delete:", (e as Error).message); } }
   }
   return NextResponse.json({ ok: true });
 }

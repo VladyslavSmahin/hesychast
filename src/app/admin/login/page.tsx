@@ -60,7 +60,7 @@ export default function LoginPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/assets/logo-fish.png" alt="" style={{ height: 56, marginBottom: 18 }} />
         <div style={{ fontFamily: "var(--font-church)", fontSize: 26, fontWeight: 700, letterSpacing: 3, color: "var(--text-primary)" }}>
-          ІЄСИХАСТ
+          ІСИХАСТ
         </div>
         <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 28 }}>
           Адмінпанель

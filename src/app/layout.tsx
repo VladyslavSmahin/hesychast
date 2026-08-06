@@ -31,9 +31,9 @@ const church = Old_Standard_TT({
 });
 
 export const metadata: Metadata = {
-  title: "ІЄСИХАСТ — православна крамниця",
+  title: "ІСИХАСТ — православна крамниця",
   description:
-    "Православний мерч та продукти з пасіки. Крамниця ІЄСИХАСТ.",
+    "Православний мерч та продукти з пасіки. Крамниця ІСИХАСТ.",
 };
 
 export default function RootLayout({

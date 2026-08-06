@@ -20,7 +20,7 @@ function BrandMark() {
           color: "var(--text-primary)", whiteSpace: "nowrap",
         }}
       >
-        ІЄСИХАСТ
+        ІСИХАСТ
       </div>
     </a>
   );

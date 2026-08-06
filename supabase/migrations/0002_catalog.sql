@@ -1,5 +1,5 @@
 -- =============================================================================
---  ІЄСИХАСТ — спрощений каталог та замовлення.
+--  ІСИХАСТ — спрощений каталог та замовлення.
 --  Потребує 0001_auth_roles.sql (хелпери is_staff/is_admin, ролі).
 --  БЕЗ інгредієнтів / підкатегорій / промокодів / КБЖУ / історії цін.
 --  Товар = назва + ціна + опис + вага + фото + категорія. Акції та банери — є.
@@ -30,7 +30,7 @@ create table if not exists public.products (
   price        numeric(10,2) not null default 0,
   weight       text,                       -- напр. «0.5 л», «250 г» (опційно)
   badge        text check (badge in ('ХІТ','НОВЕ') or badge is null),
-  image_path   text,                       -- публічний URL фото (R2) або null
+  image_path   text,                       -- публічний URL фото (Storage, бакет media) або null
   is_available boolean not null default true,
   sort_order   int not null default 0,
   created_at   timestamptz not null default now()

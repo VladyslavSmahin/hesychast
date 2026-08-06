@@ -13,7 +13,7 @@ const MAX_MB = 8;
 // Помилки з API → людські підписи.
 const ERR: Record<string, string> = {
   unauthorized: "Немає доступу (увійдіть як співробітник).",
-  r2_not_configured: "Сховище R2 не налаштоване (ключі Cloudflare).",
+  storage_not_configured: "Сховище не налаштоване (ключі Supabase).",
   too_large: `Файл завеликий (макс. ${MAX_MB} МБ).`,
   bad_image: "Не вдалося обробити зображення.",
   upload_failed: "Помилка завантаження у сховище.",

@@ -6,7 +6,7 @@ import { convertAndUpload } from "@/lib/imageUpload";
 export const runtime = "nodejs";
 
 // POST /api/upload — завантаження зображення (multipart: "file", опц. "folder").
-// Конвертує у WebP, кладе в R2, повертає { url }. Запис у БД робить відповідна форма.
+// Конвертує у WebP, кладе в Supabase Storage, повертає { url }. Запис у БД робить відповідна форма.
 export async function POST(req: Request) {
   if (!(await isStaff())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });

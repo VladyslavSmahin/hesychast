@@ -51,7 +51,7 @@ export default function Hero({
               color: "var(--text-primary)", letterSpacing: -1, marginBottom: 18,
             }}
           >
-            ІЄСИХАСТ
+            ІСИХАСТ
           </h1>
           <p
             className="hero-tagline"

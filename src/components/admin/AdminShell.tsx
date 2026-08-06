@@ -97,7 +97,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className={`${s.sidebar} ${navOpen ? s.sidebarOpen : ""}`}>
         <Link href="/admin" className={s.brand}>
           <div>
-            <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІЄСИХАСТ</div>
+            <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІСИХАСТ</div>
             <div className={s.brandSub}>Адмінпанель</div>
           </div>
         </Link>
