@@ -16,7 +16,7 @@ export default function ProductGridCard({ item }: { item: Product }) {
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: "var(--card-ar, 16 / 9)" }}>
-        <PhotoSlot h="100%" photo={item.photo} />
+        <PhotoSlot h="100%" photo={item.photo} alt={item.name} />
       </div>
 
       <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.15, marginTop: 10, marginBottom: 8 }}>

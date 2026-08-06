@@ -39,7 +39,7 @@ export default function MenuCard({
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: compact ? undefined : "var(--card-ar, 16 / 9)" }}>
-        <PhotoSlot h={compact ? photoH : "100%"} photo={item.photo} />
+        <PhotoSlot h={compact ? photoH : "100%"} photo={item.photo} alt={item.name} />
         {item.badge && (
           <div
             style={{

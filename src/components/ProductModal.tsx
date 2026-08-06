@@ -57,7 +57,7 @@ export default function ProductModal({
         </button>
 
         <div style={{ position: "relative", minHeight: "var(--modal-photo-h, 320px)" }}>
-          <PhotoSlot h="100%" photo={item.photo} />
+          <PhotoSlot h="100%" photo={item.photo} alt={item.name} sizes="(max-width: 900px) 100vw, 450px" />
           {item.badge && (
             <div
               style={{

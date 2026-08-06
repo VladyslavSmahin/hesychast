@@ -1,6 +1,18 @@
+// Хост Supabase Storage — звідти вантажаться фото товарів і банери.
+// Без цього next/image відмовиться показувати зображення із зовнішнього домену.
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+  : undefined;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns: supabaseHost
+      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
+      : [],
+    formats: ["image/avif", "image/webp"],
+  },
   poweredByHeader: false, // не розкривати "X-Powered-By: Next.js"
   // Security-заголовки на всі відповіді (clickjacking, sniffing, HTTPS, referrer)
   async headers() {

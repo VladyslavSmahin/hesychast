@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import Image from "next/image";
 
 type P = SVGProps<SVGSVGElement>;
 
@@ -72,26 +73,48 @@ export const Icon = {
   ),
 };
 
+/**
+ * Слот під фото товару. Всередині — next/image: ліниве завантаження, потрібний
+ * розмір під екран і сучасні формати. Раніше фото ставилось як CSS background —
+ * браузер вантажив повну картинку одразу, а пошуковик такі зображення не бачить
+ * (немає ні <img>, ні alt).
+ *
+ * alt — назва товару: це і доступність, і трафік з пошуку по зображеннях.
+ * priority ставимо лише головному фото сторінки товару (LCP-елемент).
+ */
 export function PhotoSlot({
   h = 280,
   photo,
+  alt = "",
+  priority = false,
+  sizes = "(max-width: 640px) 50vw, (max-width: 1180px) 33vw, 300px",
 }: {
   h?: number | string;
   photo?: string | null;
+  alt?: string;
+  priority?: boolean;
+  sizes?: string;
 }) {
   return (
     <div
       style={{
         width: "100%",
         height: h,
-        background: photo
-          ? `#0A0908 url(${photo}) center/cover no-repeat`
-          : "linear-gradient(135deg, #1A1714 0%, #0E0C0A 100%)",
+        background: photo ? "#0A0908" : "linear-gradient(135deg, #1A1714 0%, #0E0C0A 100%)",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {!photo && (
+      {photo ? (
+        <Image
+          src={photo}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          style={{ objectFit: "cover" }}
+        />
+      ) : (
         <div
           style={{
             position: "absolute",

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePublicBanners } from "@/features/publicData";
 
@@ -49,6 +50,8 @@ export default function HeroPromoSlider() {
       gridArea: "1 / 1",
       width: "100%",
       aspectRatio: "16 / 9",
+      // next/image з fill позиціонується відносно найближчого предка з position
+      position: "relative",
       transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1), opacity 0.6s, filter 0.6s",
       willChange: "transform, opacity",
     };
@@ -85,8 +88,15 @@ export default function HeroPromoSlider() {
             boxShadow: offsetOf(i) === 0 ? "0 16px 50px rgba(0,0,0,0.55)" : "none",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={b.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          {/* перший банер — LCP головної, тому вантажимо його одразу (priority) */}
+          <Image
+            src={b.image}
+            alt={`Акційна пропозиція ${i + 1} — ІСИХАСТ`}
+            fill
+            sizes="(max-width: 900px) 100vw, 520px"
+            priority={i === 0}
+            style={{ objectFit: "cover" }}
+          />
         </div>
       ))}
 

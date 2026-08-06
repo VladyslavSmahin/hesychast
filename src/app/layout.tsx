@@ -3,7 +3,7 @@ import { Cormorant_Garamond, Jost, Old_Standard_TT } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CartProvider } from "@/features/cart/CartContext";
-import { SITE_URL } from "@/lib/siteUrl";
+import { SITE_URL, IS_PUBLIC_DOMAIN } from "@/lib/siteUrl";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -40,6 +40,9 @@ export const metadata: Metadata = {
   description:
     "Мед із власної пасіки, церковне начиння та православний мерч. Крамниця ІСИХАСТ — кожен виріб з молитвою та любов'ю. Доставка Новою Поштою.",
   alternates: { canonical: "/" },
+  // На тимчасовому домені додатково закриваємо сторінки мета-тегом:
+  // robots.txt не гарантує, що сторінка не потрапить у видачу за посиланням.
+  ...(IS_PUBLIC_DOMAIN ? {} : { robots: { index: false, follow: false } }),
   openGraph: {
     type: "website",
     siteName: "ІСИХАСТ",
