@@ -70,8 +70,8 @@ export default function Footer() {
         </div>
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 32, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: 2, color: "var(--text-secondary)" }}>
-            © 2025 SUSHI SYNDICATE · ТУЛЬЧИН, ВІННИЦЬКА ОБЛАСТЬ
+          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: 2, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+            © {new Date().getFullYear()} ІСИХАСТ · {CONTACTS.address}
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 17, color: "var(--text-secondary)" }}>
             {TEXTS.tagline}
