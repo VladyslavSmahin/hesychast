@@ -34,5 +34,4 @@ export const ASSET_ICONS = {
   cart: A("icon-cart.png"),
   instagram: A("icon-instagram.png"),
   telegram: A("icon-telegram.png"),
-  logo: A("logo-fish.png"),
 };

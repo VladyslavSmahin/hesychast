@@ -20,8 +20,7 @@ const P = (
   desc: string, weight = "", badge: Product["badge"] = "",
 ): Product => ({
   // slug демо-товару = id без префікса «p-» (демо-каталог теж має працювати на /tovar/<slug>)
-  id, slug: id.replace(/^p-/, ""), name, desc, fullDesc: desc, composition: "", price, weight, pieces: "",
-  badge, category, ingredients: [], photo: null,
+  id, slug: id.replace(/^p-/, ""), name, desc, price, weight, badge, category, photo: null,
 });
 
 export const demoProducts: Product[] = [

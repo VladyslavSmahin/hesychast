@@ -21,7 +21,7 @@ export default function PromosPage() {
   const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState<Tab>("promos");
 
-  const active = products.filter((p) => !p.deletedAt);
+  const active = products; // soft-delete у схемі немає
   const [editing, setEditing] = useState<DbPromo | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);

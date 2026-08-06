@@ -27,10 +27,9 @@ const emptyDraft = (categoryId: string): Draft => ({
 
 // Заповнюємо повний ProductInput; поля, яких немає у спрощеній схемі, — дефолтами.
 const toInput = (d: Draft): ProductInput => ({
-  categoryId: d.categoryId || null, subcategoryId: null,
-  name: d.name.trim(), price: d.price, weight: d.weight, pieces: "", badge: d.badge,
-  desc: d.desc, composition: "", fullDesc: d.desc, photo: d.photo, isAvailable: d.isAvailable,
-  ingredientIds: [], ingredientGrams: {}, setItemIds: [],
+  categoryId: d.categoryId || null,
+  name: d.name.trim(), price: d.price, weight: d.weight, badge: d.badge,
+  desc: d.desc, photo: d.photo, isAvailable: d.isAvailable,
 });
 
 export default function ProductsPage() {

@@ -2,9 +2,8 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { PUBLIC_TAG, PUBLIC_REVALIDATE } from "@/features/publicCache";
-import type { Product, Badge, Promo, Banner } from "@/lib/types";
-import type { PublicData, PubCategory, PubSubcategory, PubReview } from "@/features/publicData";
-import { parseDeliverySettings } from "@/lib/delivery";
+import type { Product, Badge, Banner } from "@/lib/types";
+import type { PublicData, PubCategory, PubReview } from "@/features/publicData";
 import { NAV_SPECIALS, parseNavVisibility } from "@/lib/navSpecials";
 import { parseGlossary } from "@/lib/glossary";
 
@@ -28,15 +27,10 @@ export function mapProduct(p: ProductRow): Product {
     slug: p.slug,
     name: p.name,
     desc: p.description ?? "",
-    fullDesc: p.description ?? "",
-    composition: "",
     price: num(p.price),
     weight: p.weight ?? "",
-    pieces: "",
     badge: (p.badge ?? "") as Badge,
     category: categorySlug,
-    subcategory: undefined,
-    ingredients: [],
     photo: p.image_path ?? null,
   };
 }
@@ -49,7 +43,7 @@ export function mapProduct(p: ProductRow): Product {
 async function fetchPublicDataUncached(): Promise<PublicData> {
   const supabase = createAnonClient();
 
-  const [catsRes, prodsRes, promosRes, bannersRes, deliveryRes, reviewsRes] = await Promise.all([
+  const [catsRes, prodsRes, promosRes, bannersRes, settingsRes, reviewsRes] = await Promise.all([
     supabase.from("categories").select("id, name, slug, sort_order, show_in_nav, is_active").order("sort_order"),
     supabase
       .from("products")
@@ -58,7 +52,7 @@ async function fetchPublicDataUncached(): Promise<PublicData> {
       .order("sort_order"),
     supabase.from("promos").select("id, promo_price, valid_from, valid_until, product:products(id)").eq("is_active", true).order("sort_order"),
     supabase.from("banners").select("id, image_path").eq("is_active", true).order("sort_order"),
-    supabase.from("settings").select("key, value").in("key", ["delivery", "nav_specials", "glossary"]),
+    supabase.from("settings").select("key, value").in("key", ["nav_specials", "glossary"]),
     supabase.from("reviews").select("id, author_name, rating, text, created_at").eq("status", "approved").order("created_at", { ascending: false }).limit(24),
   ]);
 
@@ -71,9 +65,6 @@ async function fetchPublicDataUncached(): Promise<PublicData> {
   const categories: PubCategory[] = (catsRes.data ?? []).map((c) => ({
     id: c.id, name: c.name, slug: c.slug, sortOrder: c.sort_order, showInNav: c.show_in_nav, isActive: c.is_active,
   }));
-
-  // підкатегорій у спрощеній схемі немає
-  const subcategories: PubSubcategory[] = [];
 
   // ефективна акційна ціна на товар: активна акція в межах дат і нижча за каталожну
   const now = Date.now();
@@ -93,20 +84,10 @@ async function fetchPublicDataUncached(): Promise<PublicData> {
     return pp != null && pp < p.price ? { ...p, oldPrice: p.price, price: pp } : p;
   });
 
-  const promos: Promo[] = (promosRes.data ?? []).map((p) => {
-    const prod = p.product as { id: string } | { id: string }[] | null;
-    const linkedItemId = Array.isArray(prod) ? prod[0]?.id ?? "" : prod?.id ?? "";
-    return {
-      id: p.id, bannerImage: "", label: "", title: "",
-      price: Number(p.promo_price), oldPrice: 0, linkedItemId,
-    };
-  });
-
   const banners: Banner[] = ((bannersRes.data ?? []) as { id: string; image_path: string }[])
     .map((b) => ({ id: b.id, image: b.image_path }));
 
-  const settingsRows = (deliveryRes.data ?? []) as { key: string; value: unknown }[];
-  const delivery = parseDeliverySettings(settingsRows.find((r) => r.key === "delivery")?.value);
+  const settingsRows = (settingsRes.data ?? []) as { key: string; value: unknown }[];
   const navVis = parseNavVisibility(settingsRows.find((r) => r.key === "nav_specials")?.value);
   const glossary = parseGlossary(settingsRows.find((r) => r.key === "glossary")?.value);
   // підписи спец-пунктів навігації беремо з глосарію
@@ -124,12 +105,12 @@ async function fetchPublicDataUncached(): Promise<PublicData> {
     return {
       catalog: demoProducts,
       categories: categories.length ? categories : demoCategories,
-      subcategories, promos, banners, delivery, navSpecials, glossary,
+      banners, navSpecials, glossary,
       reviews: reviews.length ? reviews : demoReviews,
     };
   }
 
-  return { catalog, categories, subcategories, promos, banners, delivery, navSpecials, glossary, reviews };
+  return { catalog, categories, banners, navSpecials, glossary, reviews };
 }
 
 /**

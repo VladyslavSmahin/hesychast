@@ -3,10 +3,6 @@
 
 const API = "https://api.telegram.org";
 
-export function isTelegramConfigured(): boolean {
-  return Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
-}
-
 /**
  * Надсилає текст у налаштований чат/групу.
  * Повертає true/false — помилка тут не повинна ламати основний сценарій.

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import MenuCard from "./MenuCard";
-import { usePublicCatalog, usePublicCategories, usePublicSubcategories, useGloss } from "@/features/publicData";
+import { usePublicCatalog, usePublicCategories, useGloss } from "@/features/publicData";
 import { useIsMobile } from "@/features/useIsMobile";
 import type { Product, NavCategory } from "@/lib/types";
 
@@ -11,7 +11,6 @@ type NavFilter = NonNullable<NavCategory["filter"]>;
 // скільки товарів вантажимо за раз: мобілка (2 кол.) — 10, десктоп (4/3 кол.) — 12 (повні ряди)
 const PAGE_MOBILE = 10;
 const PAGE_DESKTOP = 12;
-const cap = (n: string) => n.charAt(0).toUpperCase() + n.slice(1);
 
 type Sort = "default" | "price-asc" | "price-desc" | "weight-asc" | "weight-desc";
 const parseWeight = (w: string) => {
@@ -33,40 +32,16 @@ export default function FullMenu({
   const cats = usePublicCategories();
   const glossNovynky = useGloss("nav_novynky");
   const glossFullMenu = useGloss("title_full_menu");
-  // список інгредієнтів для фільтра — динамічно з каталогу (унікальні назви)
-  const INGREDIENTS = useMemo(() => {
-    const set = new Set<string>();
-    for (const m of catalog) for (const i of m.ingredients) set.add(i);
-    return [...set].sort((a, b) => a.localeCompare(b, "uk")).map(cap);
-  }, [catalog]);
-  // підкатегорії активної категорії (напр. типи ролів для «роли»).
-  // Показуємо лише коли вибрана конкретна категорія — не на «Повне меню»/«Новинки».
-  const catSubs = usePublicSubcategories(navFilter?.category);
-  const subcats = navFilter?.category ? catSubs : [];
-  const [selected, setSelected] = useState<string[]>([]); // обрані інгредієнти (мультивибір)
-  const [selectedSub, setSelectedSub] = useState<string | null>(null); // обрана підкатегорія
   const [sort, setSort] = useState<Sort>("default"); // сортування
   const pageSize = isMobile ? PAGE_MOBILE : PAGE_DESKTOP;
   const [visibleCount, setVisibleCount] = useState(PAGE_DESKTOP);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false); // десктоп: розкриті чипи інгредієнтів
-
-  // при зміні категорії скидаємо інгредієнт-фільтр і підкатегорію
-  useEffect(() => { setSelected([]); setSelectedSub(null); }, [navFilter]);
-
-  const toggle = (ing: string) =>
-    setSelected((prev) => (prev.includes(ing) ? prev.filter((x) => x !== ing) : [...prev, ing]));
 
   const items = useMemo(() => {
     let list = catalog;
     if (navFilter) {
       if (navFilter.category) list = list.filter((m) => m.category === navFilter.category);
       else if (navFilter.badge) list = list.filter((m) => m.badge === navFilter.badge);
-    }
-    if (selectedSub) list = list.filter((m) => m.subcategory === selectedSub);
-    if (selected.length) {
-      // товар має містити ВСІ обрані інгредієнти
-      list = list.filter((m) => selected.every((s) => m.ingredients.includes(s.toLowerCase())));
     }
     if (sort !== "default") {
       const dir = sort.endsWith("asc") ? 1 : -1;
@@ -80,9 +55,9 @@ export default function FullMenu({
       });
     }
     return list;
-  }, [catalog, selected, selectedSub, navFilter, sort]);
+  }, [catalog, navFilter, sort]);
 
-  useEffect(() => { setVisibleCount(pageSize); }, [selected, selectedSub, navFilter, pageSize]);
+  useEffect(() => { setVisibleCount(pageSize); }, [navFilter, pageSize]);
 
   const shown = items.slice(0, visibleCount);
   const hasMore = visibleCount < items.length;
@@ -92,19 +67,6 @@ export default function FullMenu({
     : navFilter?.badge === "НОВЕ"
       ? glossNovynky
       : glossFullMenu;
-
-  const Chips = (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-      <button onClick={() => setSelected([])} className={`chip ${selected.length === 0 ? "active" : ""}`}>
-        Всі
-      </button>
-      {INGREDIENTS.map((f) => (
-        <button key={f} onClick={() => toggle(f)} className={`chip ${selected.includes(f) ? "active" : ""}`}>
-          {f}
-        </button>
-      ))}
-    </div>
-  );
 
   return (
     <section id="menu" style={{ padding: "32px var(--page-pad) var(--py)", borderTop: "1px solid var(--border)" }}>
@@ -129,43 +91,11 @@ export default function FullMenu({
           </div>
         </div>
 
-        {/* десктоп: кнопка «Фільтри» зліва — чипи інгредієнтів сховані, відкриваються по кліку.
-            На мобільному фільтри в FAB-листі. */}
+        {/* десктоп: сортування (фільтр за інгредієнтами прибрано — у крамниці
+            мерчу та меду інгредієнтів немає, список завжди був порожній) */}
         {!isMobile && (
-          <div style={{ marginBottom: subcats.length ? 16 : 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <button
-                onClick={() => setFiltersOpen((v) => !v)}
-                className={`chip square ${selected.length ? "active" : ""}`}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-              >
-                <FilterIcon />
-                Фільтри{selected.length ? ` · ${selected.length}` : ""}
-              </button>
-              <SortControl sort={sort} setSort={setSort} />
-            </div>
-            {filtersOpen && <div style={{ marginTop: 14 }}>{Chips}</div>}
-          </div>
-        )}
-
-        {/* навігація по підкатегоріях активної категорії (напр. типи ролів) */}
-        {subcats.length > 0 && (
-          <div className="subcat-row" style={{ marginBottom: 28 }}>
-            <button
-              onClick={() => setSelectedSub(null)}
-              className={`chip square ${selectedSub === null ? "active" : ""}`}
-            >
-              Всі
-            </button>
-            {subcats.map((sc) => (
-              <button
-                key={sc.id}
-                onClick={() => setSelectedSub(sc.slug)}
-                className={`chip square ${selectedSub === sc.slug ? "active" : ""}`}
-              >
-                {sc.name}
-              </button>
-            ))}
+          <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <SortControl sort={sort} setSort={setSort} />
           </div>
         )}
 
@@ -207,7 +137,7 @@ export default function FullMenu({
             }}
           >
             <FilterIcon />
-            Фільтр{selected.length ? ` · ${selected.length}` : ""}
+            Сортування
           </button>
 
           {sheetOpen && (
@@ -225,23 +155,15 @@ export default function FullMenu({
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
                   <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
-                    Фільтр за інгредієнтами
+                    Сортування
                   </span>
                   <button onClick={() => setSheetOpen(false)} aria-label="Закрити"
                     style={{ width: 36, height: 36, border: "1px solid var(--border-light)", background: "transparent", color: "var(--text-primary)", cursor: "pointer", fontSize: 18 }}>×</button>
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
-                  <span className="eyebrow" style={{ display: "block", marginBottom: 8 }}>Сортування</span>
-                  <SortControl sort={sort} setSort={setSort} />
-                </div>
-
-                {Chips}
+                <SortControl sort={sort} setSort={setSort} />
 
                 <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  <button className="btn-secondary" style={{ flex: "0 0 auto" }} onClick={() => setSelected([])}>
-                    Скинути
-                  </button>
                   <button className="btn-primary" style={{ flex: 1 }} onClick={() => setSheetOpen(false)}>
                     Готово{items.length ? ` · ${items.length}` : ""}
                   </button>

@@ -5,8 +5,7 @@
 // localStorage-сторів, щоб публічні компоненти змінювались мінімально.
 
 import { createContext, useContext } from "react";
-import type { Product, Promo, Banner, NavCategory } from "@/lib/types";
-import { DEFAULT_DELIVERY, type DeliverySettings } from "@/lib/delivery";
+import type { Product, Banner, NavCategory } from "@/lib/types";
 import { GLOSSARY_DEFAULTS, type Glossary } from "@/lib/glossary";
 
 export interface PubCategory {
@@ -16,14 +15,6 @@ export interface PubCategory {
   sortOrder: number;
   showInNav: boolean;
   isActive: boolean;
-}
-
-export interface PubSubcategory {
-  id: string;
-  categorySlug: string;
-  name: string;
-  slug: string;
-  sortOrder: number;
 }
 
 export interface PubReview {
@@ -37,16 +28,13 @@ export interface PubReview {
 export interface PublicData {
   catalog: Product[];
   categories: PubCategory[];
-  subcategories: PubSubcategory[];
-  promos: Promo[];
   banners: Banner[];
-  delivery: DeliverySettings;
   navSpecials: NavCategory[];
   glossary: Glossary;
   reviews: PubReview[];
 }
 
-const Ctx = createContext<PublicData>({ catalog: [], categories: [], subcategories: [], promos: [], banners: [], delivery: DEFAULT_DELIVERY, navSpecials: [], glossary: GLOSSARY_DEFAULTS, reviews: [] });
+const Ctx = createContext<PublicData>({ catalog: [], categories: [], banners: [], navSpecials: [], glossary: GLOSSARY_DEFAULTS, reviews: [] });
 
 export function PublicDataProvider({ value, children }: { value: PublicData; children: React.ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -61,30 +49,14 @@ export function usePublicCategories(opts?: { navOnly?: boolean }): PubCategory[]
   return opts?.navOnly ? cats.filter((c) => c.isActive && c.showInNav) : cats;
 }
 
-export function usePublicSubcategories(categorySlug?: string): PubSubcategory[] {
-  const subs = useContext(Ctx).subcategories;
-  return categorySlug ? subs.filter((s) => s.categorySlug === categorySlug) : subs;
-}
-
-export function usePublicPromos(): Promo[] {
-  return useContext(Ctx).promos;
-}
-
 export function usePublicBanners(): Banner[] {
   return useContext(Ctx).banners;
-}
-
-export function usePublicDelivery(): DeliverySettings {
-  return useContext(Ctx).delivery;
 }
 
 export function usePublicNavSpecials(): NavCategory[] {
   return useContext(Ctx).navSpecials;
 }
 
-export function usePublicGlossary(): Glossary {
-  return useContext(Ctx).glossary;
-}
 
 export function usePublicReviews(): PubReview[] {
   return useContext(Ctx).reviews;

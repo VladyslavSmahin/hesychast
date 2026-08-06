@@ -5,33 +5,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { parseDeliverySettings, DEFAULT_DELIVERY, type DeliverySettings } from "@/lib/delivery";
 import { NAV_SPECIALS, parseNavVisibility } from "@/lib/navSpecials";
 import { parseGlossary, type Glossary } from "@/lib/glossary";
 import type { Badge } from "@/lib/types";
 import { revalidatePublicAction } from "@/features/admin/actions/revalidatePublic";
 
 // ---------- Типи ----------
-export interface DbIngredient {
-  id: string; name: string; slug: string;
-  kcal: number | null; protein: number | null; fat: number | null; carbs: number | null;
-}
 export interface DbCategory { id: string; name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
-export interface DbSubcategory { id: string; categoryId: string; name: string; slug: string; sortOrder: number; }
 export interface DbProduct {
-  id: string; categoryId: string | null; subcategoryId: string | null;
-  name: string; slug: string; price: number; weight: string; pieces: string; badge: Badge;
-  desc: string; composition: string; fullDesc: string; photo: string | null;
-  isAvailable: boolean; deletedAt: string | null; sortOrder: number;
-  ingredientIds: string[]; ingredientGrams: Record<string, number>;
-  setItemIds: string[]; // для сетів: id товарів-ролів у складі
+  id: string; categoryId: string | null;
+  name: string; slug: string; price: number; weight: string; badge: Badge;
+  desc: string; photo: string | null;
+  isAvailable: boolean; sortOrder: number;
 }
 export interface ProductInput {
-  categoryId: string | null; subcategoryId: string | null;
-  name: string; price: number; weight: string; pieces: string; badge: Badge;
-  desc: string; composition: string; fullDesc: string; photo: string | null;
-  isAvailable: boolean; ingredientIds: string[]; ingredientGrams: Record<string, number>;
-  setItemIds: string[];
+  categoryId: string | null;
+  name: string; price: number; weight: string; badge: Badge;
+  desc: string; photo: string | null; isAvailable: boolean;
 }
 
 const slugify = (s: string) =>
@@ -49,13 +39,10 @@ interface ProductRow {
 
 function mapProduct(p: ProductRow): DbProduct {
   return {
-    id: p.id, categoryId: p.category_id, subcategoryId: null,
-    name: p.name, slug: p.slug, price: Number(p.price), weight: p.weight ?? "", pieces: "",
-    badge: (p.badge ?? "") as Badge, desc: p.description ?? "", composition: "",
-    fullDesc: p.description ?? "", photo: p.image_path ?? null, isAvailable: p.is_available,
-    deletedAt: null, sortOrder: p.sort_order,
-    ingredientIds: [], ingredientGrams: {},
-    setItemIds: [],
+    id: p.id, categoryId: p.category_id,
+    name: p.name, slug: p.slug, price: Number(p.price), weight: p.weight ?? "",
+    badge: (p.badge ?? "") as Badge, desc: p.description ?? "",
+    photo: p.image_path ?? null, isAvailable: p.is_available, sortOrder: p.sort_order,
   };
 }
 
@@ -77,20 +64,6 @@ export function useDbProducts() {
   return { products, loading, refetch };
 }
 
-export function useDbIngredients() {
-  const supabase = useMemo(() => createClient(), []);
-  const [ingredients, setIngredients] = useState<DbIngredient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const refetch = useCallback(async () => {
-    const { data, error } = await supabase.from("ingredients").select("id, name, slug, kcal, protein, fat, carbs").order("name");
-    if (error) console.error("ingredients:", error.message);
-    else setIngredients((data ?? []) as DbIngredient[]);
-    setLoading(false);
-  }, [supabase]);
-  useEffect(() => { refetch(); }, [refetch]);
-  return { ingredients, loading, refetch };
-}
-
 export function useDbCategories() {
   const supabase = useMemo(() => createClient(), []);
   const [categories, setCategories] = useState<DbCategory[]>([]);
@@ -103,20 +76,6 @@ export function useDbCategories() {
   }, [supabase]);
   useEffect(() => { refetch(); }, [refetch]);
   return { categories, loading, refetch };
-}
-
-export function useDbSubcategories() {
-  const supabase = useMemo(() => createClient(), []);
-  const [subcategories, setSubcategories] = useState<DbSubcategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const refetch = useCallback(async () => {
-    const { data, error } = await supabase.from("subcategories").select("id, category_id, name, slug, sort_order").order("sort_order");
-    if (error) console.error("subcategories:", error.message);
-    else setSubcategories((data ?? []).map((s) => ({ id: s.id, categoryId: s.category_id, name: s.name, slug: s.slug, sortOrder: s.sort_order })));
-    setLoading(false);
-  }, [supabase]);
-  useEffect(() => { refetch(); }, [refetch]);
-  return { subcategories, loading, refetch };
 }
 
 // ---------- Мутації ----------
@@ -147,11 +106,6 @@ export async function dbUpdateProduct(id: string, input: ProductInput): Promise<
 }
 
 /** Повертає текст помилки або undefined при успіху. */
-export async function dbUpdatePrice(id: string, price: number): Promise<string | undefined> {
-  const { error } = await createClient().from("products").update({ price }).eq("id", id);
-  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
-  return error?.message;
-}
 export async function dbSetAvailable(id: string, value: boolean) {
   await createClient().from("products").update({ is_available: value }).eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
@@ -161,39 +115,6 @@ export async function dbSoftDelete(id: string) {
   await createClient().from("products").delete().eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
-export async function dbRestore(id: string) {
-  // немає soft-delete — заглушка для сумісності зі старими екранами
-}
-export async function dbHardDelete(id: string) {
-  await createClient().from("products").delete().eq("id", id);
-  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
-}
-export async function dbPurgeExpired() {
-  // немає soft-delete — нічого прибирати
-}
-
-// ---------- Інгредієнти CRUD ----------
-type Nutrition = { kcal?: number | null; protein?: number | null; fat?: number | null; carbs?: number | null };
-
-/** Створити інгредієнт. nutrition — опційне КБЖУ на 100 г. */
-export async function dbCreateIngredient(name: string, nutrition?: Nutrition): Promise<DbIngredient | undefined> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ingredients")
-    .insert({ name, slug: slugify(name), ...nutrition })
-    .select("id, name, slug, kcal, protein, fat, carbs").single();
-  if (error || !data) { console.error("ingredient create:", error?.message); return undefined; }
-  return data as DbIngredient;
-}
-
-export async function dbUpdateIngredient(id: string, patch: Partial<{ name: string } & Nutrition>) {
-  await createClient().from("ingredients").update(patch).eq("id", id);
-}
-export async function dbDeleteIngredient(id: string) {
-  // product_ingredients чистяться каскадом (FK on delete cascade)
-  await createClient().from("ingredients").delete().eq("id", id);
-}
-
 // ---------- Категорії CRUD ----------
 export interface CategoryInput { name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
 export async function dbCreateCategory(input: CategoryInput): Promise<string | undefined> {
@@ -216,24 +137,6 @@ export async function dbUpdateCategory(id: string, patch: Partial<{ name: string
 export async function dbDeleteCategory(id: string) {
   await createClient().from("categories").delete().eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
-}
-
-// ---------- Підкатегорії CRUD ----------
-export async function dbCreateSubcategory(input: { categoryId: string; name: string; sortOrder: number }): Promise<string | undefined> {
-  const { error } = await createClient().from("subcategories").insert({
-    category_id: input.categoryId, name: input.name, slug: slugify(input.name), sort_order: input.sortOrder,
-  });
-  return error?.message;
-}
-export async function dbUpdateSubcategory(id: string, patch: Partial<{ name: string; sortOrder: number; categoryId: string }>) {
-  const row: Record<string, unknown> = {};
-  if (patch.name !== undefined) row.name = patch.name;
-  if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
-  if (patch.categoryId !== undefined) row.category_id = patch.categoryId;
-  await createClient().from("subcategories").update(row).eq("id", id);
-}
-export async function dbDeleteSubcategory(id: string) {
-  await createClient().from("subcategories").delete().eq("id", id);
 }
 
 // ---------- Акції ----------
@@ -443,27 +346,6 @@ export async function dbSetReviewStatus(id: string, status: ReviewStatus) {
 export async function dbDeleteReview(id: string) {
   await createClient().from("reviews").delete().eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
-}
-
-// ---------- Налаштування доставки (settings, key='delivery') ----------
-export function useDbDelivery() {
-  const supabase = useMemo(() => createClient(), []);
-  const [delivery, setDelivery] = useState<DeliverySettings>(DEFAULT_DELIVERY);
-  const [loading, setLoading] = useState(true);
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("settings").select("value").eq("key", "delivery").maybeSingle();
-    if (error) console.error("delivery settings:", error.message);
-    else setDelivery(parseDeliverySettings(data?.value));
-    setLoading(false);
-  }, [supabase]);
-  useEffect(() => { refetch(); }, [refetch]);
-  return { delivery, loading, refetch };
-}
-
-export async function dbSaveDelivery(settings: DeliverySettings): Promise<string | undefined> {
-  const { error } = await createClient().from("settings").upsert({ key: "delivery", value: settings }, { onConflict: "key" });
-  return error?.message;
 }
 
 // ---------- Спец-пункти навігації (Новинки / Акції) ----------

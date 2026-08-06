@@ -9,8 +9,8 @@ import s from "@/components/admin/admin.module.css";
 
 export default function DashboardPage() {
   const { categories: cats } = useDbCategories();
-  const { products: allProducts } = useDbProducts();
-  const products = allProducts.filter((p) => !p.deletedAt);
+  // у спрощеній схемі немає soft-delete — усі товари «живі»
+  const { products } = useDbProducts();
   const { promos } = useDbPromos();
   const { user } = useAdminAuth();
   const supabase = useMemo(() => createClient(), []);
