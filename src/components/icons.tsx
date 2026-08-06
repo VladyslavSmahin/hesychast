@@ -4,6 +4,18 @@ import Image from "next/image";
 type P = SVGProps<SVGSVGElement>;
 
 export const Icon = {
+  /**
+   * Восьмиконечний православний хрест: верхня коротка перекладина (титло),
+   * середня основна та нижня коса (підніжжя, підняте праворуч від глядача).
+   */
+  Cross: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" {...p}>
+      <path d="M12 2v20" />
+      <path d="M8.5 6h7" />
+      <path d="M5 10.5h14" />
+      <path d="M7.5 17.5l9-3" />
+    </svg>
+  ),
   Cart: (p: P) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M3 4h2.5l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6.5" />

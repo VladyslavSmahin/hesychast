@@ -43,8 +43,9 @@ export default function MobileMenu({
       >
         {/* header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "var(--header-h)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          <div style={{ fontFamily: "var(--font-church)", fontSize: 20, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-church)", fontSize: 20, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)" }}>
             ІСИХАСТ
+            <Icon.Cross width="14" height="14" style={{ color: "var(--accent)" }} />
           </div>
           <button
             onClick={onClose}

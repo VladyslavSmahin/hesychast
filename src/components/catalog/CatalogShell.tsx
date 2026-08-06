@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CartHost from "./CartHost";
+import { Icon } from "@/components/icons";
 import { CONTACTS, TEXTS } from "@/data/site";
 
 // Каркас сторінок каталогу (товар, категорія) — серверний, у стилі сайту.
@@ -23,9 +24,10 @@ export default function CatalogShell({
         <div style={{ maxWidth: 1180, width: "100%", margin: "0 auto", padding: "0 var(--page-pad)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <Link
             href="/"
-            style={{ fontFamily: "var(--font-church)", fontSize: 22, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)", textDecoration: "none" }}
+            style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-church)", fontSize: 22, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)", textDecoration: "none" }}
           >
             ІСИХАСТ
+            <Icon.Cross width="15" height="15" style={{ color: "var(--accent)" }} />
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <Link href="/" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}>

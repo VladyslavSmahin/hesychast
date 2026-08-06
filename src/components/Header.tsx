@@ -22,6 +22,8 @@ function BrandMark() {
       >
         ІСИХАСТ
       </div>
+      {/* восьмиконечний хрест праворуч від назви */}
+      <Icon.Cross width="17" height="17" style={{ marginLeft: 2, flexShrink: 0, color: "var(--accent)" }} />
     </a>
   );
 }
