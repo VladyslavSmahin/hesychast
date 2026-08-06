@@ -5,9 +5,19 @@ import CatalogShell from "@/components/catalog/CatalogShell";
 import ProductGridCard from "@/components/catalog/ProductGridCard";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema, itemListSchema } from "@/lib/schema";
-import { fetchCategoryBySlug } from "@/features/catalog.server";
+import { fetchCategoryBySlug, fetchAllSlugs } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
+
+// Пререндер сторінок активних категорій на білді.
+export async function generateStaticParams() {
+  try {
+    const { categories } = await fetchAllSlugs();
+    return categories.map((c) => ({ slug: c.slug }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;

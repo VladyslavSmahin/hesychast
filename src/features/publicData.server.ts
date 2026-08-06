@@ -1,5 +1,7 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createAnonClient } from "@/lib/supabase/anon";
+import { PUBLIC_TAG, PUBLIC_REVALIDATE } from "@/features/publicCache";
 import type { Product, Badge, Promo, Banner } from "@/lib/types";
 import type { PublicData, PubCategory, PubSubcategory, PubReview } from "@/features/publicData";
 import { parseDeliverySettings } from "@/lib/delivery";
@@ -39,8 +41,13 @@ export function mapProduct(p: ProductRow): Product {
   };
 }
 
-export async function fetchPublicData(): Promise<PublicData> {
-  const supabase = await createClient();
+/**
+ * Читання даних витрини. Навмисно клієнт БЕЗ cookies: сторінка однакова для всіх
+ * відвідувачів, тож її можна кешувати. Зі звичайним серверним клієнтом Next
+ * вважав би сторінку персональною й ходив у БД на кожен запит.
+ */
+async function fetchPublicDataUncached(): Promise<PublicData> {
+  const supabase = createAnonClient();
 
   const [catsRes, prodsRes, promosRes, bannersRes, deliveryRes, reviewsRes] = await Promise.all([
     supabase.from("categories").select("id, name, slug, sort_order, show_in_nav, is_active").order("sort_order"),
@@ -124,3 +131,12 @@ export async function fetchPublicData(): Promise<PublicData> {
 
   return { catalog, categories, subcategories, promos, banners, delivery, navSpecials, glossary, reviews };
 }
+
+/**
+ * Кешована версія: віддає ті самі дані без походу в БД, поки адмінка не скине
+ * тег PUBLIC_TAG (або поки не мине PUBLIC_REVALIDATE як страховка).
+ */
+export const fetchPublicData = unstable_cache(fetchPublicDataUncached, ["public-data"], {
+  tags: [PUBLIC_TAG],
+  revalidate: PUBLIC_REVALIDATE,
+});

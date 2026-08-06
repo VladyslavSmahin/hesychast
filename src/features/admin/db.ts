@@ -9,6 +9,7 @@ import { parseDeliverySettings, DEFAULT_DELIVERY, type DeliverySettings } from "
 import { NAV_SPECIALS, parseNavVisibility } from "@/lib/navSpecials";
 import { parseGlossary, type Glossary } from "@/lib/glossary";
 import type { Badge } from "@/lib/types";
+import { revalidatePublicAction } from "@/features/admin/actions/revalidatePublic";
 
 // ---------- Типи ----------
 export interface DbIngredient {
@@ -134,32 +135,38 @@ export async function dbCreateProduct(input: ProductInput): Promise<string | und
   const { error } = await supabase
     .from("products")
     .insert({ ...productFields(input), slug: slugify(input.name), sort_order: 9999 });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 
 export async function dbUpdateProduct(id: string, input: ProductInput): Promise<string | undefined> {
   const supabase = createClient();
   const { error } = await supabase.from("products").update(productFields(input)).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 
 /** Повертає текст помилки або undefined при успіху. */
 export async function dbUpdatePrice(id: string, price: number): Promise<string | undefined> {
   const { error } = await createClient().from("products").update({ price }).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 export async function dbSetAvailable(id: string, value: boolean) {
   await createClient().from("products").update({ is_available: value }).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 // Спрощена схема без «кошика» (soft-delete): видалення одразу фізичне.
 export async function dbSoftDelete(id: string) {
   await createClient().from("products").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 export async function dbRestore(id: string) {
   // немає soft-delete — заглушка для сумісності зі старими екранами
 }
 export async function dbHardDelete(id: string) {
   await createClient().from("products").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 export async function dbPurgeExpired() {
   // немає soft-delete — нічого прибирати
@@ -193,6 +200,7 @@ export async function dbCreateCategory(input: CategoryInput): Promise<string | u
   const { error } = await createClient().from("categories").insert({
     name: input.name, slug: input.slug, sort_order: input.sortOrder, show_in_nav: input.showInNav, is_active: input.isActive,
   });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 export async function dbUpdateCategory(id: string, patch: Partial<{ name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean }>) {
@@ -203,9 +211,11 @@ export async function dbUpdateCategory(id: string, patch: Partial<{ name: string
   if (patch.showInNav !== undefined) row.show_in_nav = patch.showInNav;
   if (patch.isActive !== undefined) row.is_active = patch.isActive;
   await createClient().from("categories").update(row).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 export async function dbDeleteCategory(id: string) {
   await createClient().from("categories").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 // ---------- Підкатегорії CRUD ----------
@@ -274,17 +284,21 @@ function promoFields(input: PromoInput) {
 }
 export async function dbCreatePromo(input: PromoInput): Promise<string | undefined> {
   const { error } = await createClient().from("promos").insert({ ...promoFields(input), sort_order: 9999 });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 export async function dbUpdatePromo(id: string, input: PromoInput): Promise<string | undefined> {
   const { error } = await createClient().from("promos").update(promoFields(input)).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
 export async function dbSetPromoActive(id: string, value: boolean) {
   await createClient().from("promos").update({ is_active: value }).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 export async function dbDeletePromo(id: string) {
   await createClient().from("promos").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 // ---------- Банери (Hero-слайдер) ----------
@@ -339,17 +353,20 @@ export async function dbDeleteBanner(id: string): Promise<string | undefined> {
     const j = await res.json().catch(() => ({}));
     return j.error || `HTTP ${res.status}`;
   }
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return undefined;
 }
 
 export async function dbSetBannerActive(id: string, value: boolean) {
   await createClient().from("banners").update({ is_active: value }).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 /** Перезаписує порядок банерів: sort_order = індекс у переданому масиві id. */
 export async function dbReorderBanners(ids: string[]) {
   const supabase = createClient();
   await Promise.all(ids.map((id, i) => supabase.from("banners").update({ sort_order: i }).eq("id", id)));
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 // ---------- Замовлення ----------
@@ -421,9 +438,11 @@ export function useDbReviews() {
 
 export async function dbSetReviewStatus(id: string, status: ReviewStatus) {
   await createClient().from("reviews").update({ status }).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 export async function dbDeleteReview(id: string) {
   await createClient().from("reviews").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 // ---------- Налаштування доставки (settings, key='delivery') ----------
@@ -471,6 +490,7 @@ export async function dbSetNavSpecialVisible(specials: NavSpecialItem[], id: str
   const map: Record<string, boolean> = {};
   for (const sp of specials) map[sp.id] = sp.id === id ? visible : sp.showInNav;
   await createClient().from("settings").upsert({ key: "nav_specials", value: map }, { onConflict: "key" });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
 // ---------- Глосарій (settings, key='glossary') ----------
@@ -491,5 +511,6 @@ export function useDbGlossary() {
 
 export async function dbSaveGlossary(glossary: Glossary): Promise<string | undefined> {
   const { error } = await createClient().from("settings").upsert({ key: "glossary", value: glossary }, { onConflict: "key" });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }

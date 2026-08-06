@@ -7,9 +7,20 @@ import AddToCartButton from "@/components/catalog/AddToCartButton";
 import { PhotoSlot } from "@/components/icons";
 import JsonLd from "@/components/JsonLd";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
-import { fetchProductBySlug, fetchRelatedProducts } from "@/features/catalog.server";
+import { fetchProductBySlug, fetchRelatedProducts, fetchAllSlugs } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
+
+// Пререндер сторінок наявних товарів на білді — швидша віддача.
+// Товар, доданий пізніше, згенерується за першим запитом (dynamicParams за замовчуванням).
+export async function generateStaticParams() {
+  try {
+    const { products } = await fetchAllSlugs();
+    return products.map((p) => ({ slug: p.slug }));
+  } catch {
+    return []; // БД недоступна на білді — не валимо збірку
+  }
+}
 
 // Заголовок і опис беруться з БД для КОЖНОГО товару — окрема сторінка
 // в пошуковій видачі під свій запит (замість спільного title головної).

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { PUBLIC_TAG } from "@/features/publicCache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isStaff } from "@/lib/adminAuth";
 import { convertAndUpload } from "@/lib/imageUpload";
@@ -42,6 +44,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "db_failed" }, { status: 500 });
   }
 
+  revalidateTag(PUBLIC_TAG); // новий банер має з'явитися на головній одразу
   return NextResponse.json({ ok: true, id: data.id, imagePath: up.url });
 }
 
@@ -71,5 +74,6 @@ export async function DELETE(req: Request) {
     const key = storageKeyFromUrl(row.image_path);
     if (key) { try { await storageDelete(key); } catch (e) { console.error("storage delete:", (e as Error).message); } }
   }
+  revalidateTag(PUBLIC_TAG);
   return NextResponse.json({ ok: true });
 }

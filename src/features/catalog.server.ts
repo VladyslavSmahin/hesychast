@@ -1,6 +1,7 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
 import { createAnonClient } from "@/lib/supabase/anon";
+import { PUBLIC_TAG, PUBLIC_REVALIDATE } from "@/features/publicCache";
 import { mapProduct, PRODUCT_SELECT, type ProductRow } from "@/features/publicData.server";
 import type { Product } from "@/lib/types";
 
@@ -30,10 +31,10 @@ function bestPromoPrice(rows: PromoRow[] | null, basePrice: number): number | nu
 }
 
 /** Товар за slug разом із його категорією. null — товару немає або він прихований. */
-export async function fetchProductBySlug(
+async function fetchProductBySlugUncached(
   slug: string
 ): Promise<{ product: Product; category: CategoryInfo | null } | null> {
-  const supabase = await createClient();
+  const supabase = createAnonClient();
 
   const { data, error } = await supabase
     .from("products")
@@ -69,10 +70,10 @@ export async function fetchProductBySlug(
 }
 
 /** Категорія за slug + її доступні товари (з акційними цінами). null — категорії немає. */
-export async function fetchCategoryBySlug(
+async function fetchCategoryBySlugUncached(
   slug: string
 ): Promise<{ category: CategoryInfo; products: Product[] } | null> {
-  const supabase = await createClient();
+  const supabase = createAnonClient();
 
   const { data: cat } = await supabase
     .from("categories")
@@ -96,9 +97,9 @@ export async function fetchCategoryBySlug(
 }
 
 /** Кілька товарів тієї ж категорії, крім поточного (блок «Схожі товари»). */
-export async function fetchRelatedProducts(categorySlug: string, exceptId: string, limit = 4): Promise<Product[]> {
+async function fetchRelatedProductsUncached(categorySlug: string, exceptId: string, limit = 4): Promise<Product[]> {
   if (!categorySlug) return [];
-  const supabase = await createClient();
+  const supabase = createAnonClient();
 
   const { data: cat } = await supabase.from("categories").select("id").eq("slug", categorySlug).maybeSingle();
   if (!cat) return [];
@@ -120,7 +121,7 @@ export async function fetchRelatedProducts(categorySlug: string, exceptId: strin
 /** Проставляє акційні ціни списку товарів одним запитом. */
 async function applyPromos(products: Product[]): Promise<void> {
   if (products.length === 0) return;
-  const supabase = await createClient();
+  const supabase = createAnonClient();
   const { data } = await supabase
     .from("promos")
     .select("product_id, promo_price, valid_from, valid_until")
@@ -163,3 +164,16 @@ export async function fetchAllSlugs(): Promise<{ products: SitemapEntry[]; categ
     ((rows ?? []) as { slug: string; created_at: string | null }[]).map((r) => ({ slug: r.slug, createdAt: r.created_at }));
   return { products: map(prods.data), categories: map(cats.data) };
 }
+
+// Кешовані обгортки. Ключ включає slug, тож у кеші лежить окремий запис на
+// кожен товар і категорію; адмінка скидає їх усі одним тегом PUBLIC_TAG.
+const cacheOpts = { tags: [PUBLIC_TAG], revalidate: PUBLIC_REVALIDATE };
+
+export const fetchProductBySlug = (slug: string) =>
+  unstable_cache(fetchProductBySlugUncached, ["product-by-slug", slug], cacheOpts)(slug);
+
+export const fetchCategoryBySlug = (slug: string) =>
+  unstable_cache(fetchCategoryBySlugUncached, ["category-by-slug", slug], cacheOpts)(slug);
+
+export const fetchRelatedProducts = (categorySlug: string, exceptId: string, limit = 4) =>
+  unstable_cache(fetchRelatedProductsUncached, ["related", categorySlug, exceptId], cacheOpts)(categorySlug, exceptId, limit);
