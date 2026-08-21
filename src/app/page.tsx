@@ -16,9 +16,9 @@ export const revalidate = 60;
 export default async function Page() {
   const data = await fetchPublicData();
 
-  // Новини з Telegram освіжаємо ПІСЛЯ віддачі сторінки й не частіше ніж раз на 5 годин.
-  // Так стрічка живе без крона (на Vercel Hobby він доступний лише раз на добу),
-  // а відвідувач не чекає на походи в t.me.
+  // Новини з Telegram освіжаємо ПІСЛЯ віддачі сторінки й не частіше ніж раз на добу —
+  // страховка на випадок, якщо планувальник у Supabase не спрацював.
+  // Відвідувач при цьому не чекає на походи в t.me.
   after(async () => {
     try {
       if (await maybeSyncTgNews()) revalidateTag(PUBLIC_TAG);

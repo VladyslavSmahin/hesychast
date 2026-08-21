@@ -68,7 +68,7 @@ export default function NewsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <p className={s.hint} style={{ margin: 0 }}>
         Пости з цих відкритих каналів показуються в блоці «Новини» на головній.
-        Назву каналу тягнемо з Telegram; свій підпис задавайте лише якщо треба інакше. Оновлення — кожні 5 годин.
+        Назву каналу тягнемо з Telegram; свій підпис задавайте лише якщо треба інакше. Оновлення автоматичне — раз на добу.
       </p>
 
       <div className={s.card}>

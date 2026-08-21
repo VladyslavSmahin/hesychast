@@ -1,5 +1,5 @@
 // Записує адресу сайту та CRON_SECRET у settings.cron_config,
-// щоб планувальник Supabase (pg_cron) міг смикати /api/cron/tg-news.
+// щоб планувальник Supabase (pg_cron, раз на добу) міг смикати /api/cron/tg-news.
 //
 // Використання: node scripts/setup_cron.mjs https://ваш-домен
 import { readFileSync } from "node:fs";
@@ -30,5 +30,5 @@ const { error } = await supabase
   .upsert({ key: "cron_config", value: { url: url.replace(/\/+$/, ""), secret: env.CRON_SECRET } }, { onConflict: "key" });
 
 if (error) { console.error("Помилка:", error.message); process.exit(1); }
-console.log(`OK: pg_cron кожні 5 годин смикатиме ${url.replace(/\/+$/, "")}/api/cron/tg-news`);
+console.log(`OK: pg_cron раз на добу смикатиме ${url.replace(/\/+$/, "")}/api/cron/tg-news`);
 console.log("Не забудьте додати CRON_SECRET у змінні оточення Vercel.");
