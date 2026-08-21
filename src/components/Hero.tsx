@@ -1,15 +1,22 @@
 "use client";
 
 import HeroPromoSlider from "./HeroPromoSlider";
-import { CONTACTS, TEXTS } from "@/data/site";
+import { useT } from "@/features/locale/LocaleContext";
+import HeroVideos from "./HeroVideos";
+import SocialLinks from "./SocialLinks";
+import { useGloss, useSectionOn } from "@/features/publicData";
+import { CONTACTS } from "@/data/site";
 
-export default function Hero({
-  onCtaOrder,
-  onCtaMenu,
-}: {
-  onCtaOrder: () => void;
-  onCtaMenu: () => void;
-}) {
+export default function Hero() {
+  const brand = useT()("brand");
+  // під заголовком — блок «Про нас» із глосарію (адмінка → Глосарій)
+  const videosOn = useSectionOn("videos");
+  const bannersOn = useSectionOn("banners");
+  const aboutTitle = useGloss("about_title");
+  const socialTitle = useGloss("title_hero_social");
+  const aboutText = useGloss("about_text");
+  const aboutParagraphs = aboutText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
   return (
     <section
       id="hero"
@@ -34,46 +41,51 @@ export default function Hero({
           pointerEvents: "none",
         }}
       />
+
+      {/* зліва — текст і соцмережі, справа — відео клієнтів; на мобільному одне під одним */}
       <div
         className="hero-grid"
         style={{
-          maxWidth: 1440, margin: "0 auto", display: "grid",
-          gridTemplateColumns: "var(--hero-cols)", gap: 80, alignItems: "center", position: "relative",
+          maxWidth: 1440, margin: "0 auto", position: "relative",
+          display: "grid", gridTemplateColumns: "var(--hero-cols)", gap: 48, alignItems: "center",
         }}
       >
-        {/* left */}
-        <div className="fade-up hero-copy">
-          <div className="eyebrow hero-eyebrow" style={{ marginBottom: 28, fontSize: 15, letterSpacing: 4 }}>{CONTACTS.addressShort}</div>
+        <div className="hero-copy" style={{ minWidth: 0 }}>
+          <div className="eyebrow hero-eyebrow" style={{ marginBottom: 24, fontSize: 14, letterSpacing: 4 }}>
+            {CONTACTS.addressShort}
+          </div>
+
           <h1
             className="hero-title"
             style={{
               fontFamily: "var(--font-church)", fontSize: "var(--hero-h1)", fontWeight: 700, lineHeight: 0.92,
-              color: "var(--text-primary)", letterSpacing: -1, marginBottom: 18,
+              color: "var(--text-primary)", letterSpacing: -1, marginBottom: 28,
             }}
           >
-            ІСИХАСТ
+            {brand}
           </h1>
-          <p
-            className="hero-tagline"
-            style={{
-              fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 24,
-              color: "var(--text-secondary)", marginBottom: 36, fontWeight: 400,
-            }}
-          >
-            {TEXTS.tagline}
-          </p>
-          <p className="hero-lead" style={{ fontSize: 16, fontWeight: 400, color: "var(--text-primary)", maxWidth: 440, lineHeight: 1.7, marginBottom: 48, opacity: 0.92 }}>
-            {TEXTS.heroLead}
-          </p>
-          <div className="hero-cta" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            <button className="btn-primary" onClick={onCtaOrder}>Замовити</button>
-            <button className="btn-secondary" onClick={onCtaMenu}>Переглянути меню</button>
+
+          <div className="hero-about" style={{ marginBottom: 28 }}>
+            <div className="eyebrow" style={{ marginBottom: 14, fontSize: 11, letterSpacing: 3.5 }}>{aboutTitle}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {aboutParagraphs.map((p, i) => (
+                <p key={i} style={{ fontSize: 15, fontWeight: 400, color: "var(--text-primary)", lineHeight: 1.75, opacity: 0.92 }}>
+                  {p}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 12, fontSize: 11, letterSpacing: 3.5 }}>{socialTitle}</div>
+            <SocialLinks />
           </div>
         </div>
 
-        {/* right — вертикальний промо-слайдер */}
-        <div className="hero-slider">
-          <HeroPromoSlider />
+        <div className="hero-slider" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+          {videosOn && <HeroVideos />}
+          {/* активні банери, якщо вони є */}
+          {bannersOn && <HeroPromoSlider />}
         </div>
       </div>
     </section>

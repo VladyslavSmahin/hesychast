@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { useDbOrders, dbSetOrderStatus, CARRIER_LABEL, type DbOrder, type OrderStatus } from "@/features/admin/db";
+import { useDbOrders, dbSetOrderStatus, CARRIER_LABEL, type DbOrder, type OrderStatus , orderItemOptions } from "@/features/admin/db";
 import s from "@/components/admin/admin.module.css";
 
 // Колонки дошки = робочий потік заказу. Значення статусів у БД ті самі (new/confirmed/done/canceled).
@@ -150,7 +150,11 @@ function BoardCard({ order, accent, onDragStart, onDragEnd, onPrev, onNext }: {
         <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
           {order.items.map((it, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "var(--text-primary)" }}>
-              <span>{it.name} ×{it.quantity}</span><span style={{ color: "var(--text-secondary)" }}>{it.price * it.quantity} грн</span>
+              <span>
+                {it.name} ×{it.quantity}
+                {orderItemOptions(it) && <span style={{ color: "var(--text-secondary)" }}> · {orderItemOptions(it)}</span>}
+              </span>
+              <span style={{ color: "var(--text-secondary)" }}>{it.price * it.quantity} грн</span>
             </div>
           ))}
           {order.comment && <p className={s.hint} style={{ fontSize: 11, marginTop: 4 }}>💬 {order.comment}</p>}

@@ -4,10 +4,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 interface IncomingItem {
-  id: string;        // uuid товару з каталогу
+  id: string;             // ключ рядка кошика (товар + опції)
+  productId?: string;     // uuid товару з каталогу
   name: string;
   price: number;
   qty: number;
+  options?: IncomingOptions;
+}
+
+interface IncomingOptions {
+  size?: string;
+  color?: string;
+  sticker?: string;
 }
 
 type Carrier = "nova_poshta" | "ukrposhta" | "other";
@@ -27,6 +35,33 @@ interface OrderBody {
   comment?: string;
   consent?: boolean;
   items: IncomingItem[];
+}
+
+interface DbProductRow {
+  name: string;
+  price: number;
+  sizes: string[];
+  colors: string[];
+  stickerOption: boolean;
+  stickerPrice: number;
+}
+
+interface LineOptions { size?: string; color?: string; sticker?: string; stickerPrice?: number }
+
+interface LineItem {
+  productId: string;
+  name: string;
+  price: number;
+  qty: number;
+  options: LineOptions | null;
+}
+
+/** Опції позиції одним рядком: «L · Чорний · наклейка Хрест (+75 грн)». */
+function optionsLine(o: LineOptions | null): string {
+  if (!o) return "";
+  const parts = [o.size, o.color].filter(Boolean) as string[];
+  if (o.sticker) parts.push(`наклейка «${o.sticker}»${o.stickerPrice ? ` (+${o.stickerPrice} грн)` : ""}`);
+  return parts.join(" · ");
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,6 +93,8 @@ export async function POST(req: Request) {
   if (items.some((i) => !i || typeof i.id !== "string")) {
     return NextResponse.json({ ok: false, error: "bad_items" }, { status: 400 });
   }
+  // id рядка кошика містить опції, тому товар шукаємо за productId (старі кошики — за id)
+  const productIdOf = (i: IncomingItem) => (typeof i.productId === "string" ? i.productId : i.id.split("|")[0]);
   if (consent !== true) {
     return NextResponse.json({ ok: false, error: "consent_required" }, { status: 400 });
   }
@@ -76,17 +113,31 @@ export async function POST(req: Request) {
   const supabase = createAdminClient();
 
   // ---- Авторитетні ціни з БД (захист від підміни ціни на клієнті) ----
-  const ids = [...new Set(items.map((i) => i.id).filter((id) => UUID_RE.test(id)))];
-  const fromDb = new Map<string, { name: string; price: number }>();
+  const ids = [...new Set(items.map(productIdOf).filter((id) => UUID_RE.test(id)))];
+  const fromDb = new Map<string, DbProductRow>();
   const promoPrice = new Map<string, number>(); // авторитетна акційна ціна по товару
+  const stickerNames = new Set<string>();       // дозволені назви наклейок
   if (ids.length) {
     const { data: prods } = await supabase
       .from("products")
-      .select("id, name, price, is_available")
+      .select("id, name, price, is_available, sizes, colors, sticker_option, sticker_price")
       .in("id", ids);
     for (const p of prods ?? []) {
-      if (p.is_available) fromDb.set(p.id, { name: p.name, price: Number(p.price) });
+      if (!p.is_available) continue;
+      fromDb.set(p.id, {
+        name: p.name,
+        price: Number(p.price),
+        sizes: Array.isArray(p.sizes) ? p.sizes : [],
+        colors: Array.isArray(p.colors)
+          ? (p.colors as { name?: unknown }[]).map((c) => String(c?.name ?? "")).filter(Boolean)
+          : [],
+        stickerOption: Boolean(p.sticker_option),
+        stickerPrice: Number(p.sticker_price ?? 0),
+      });
     }
+    // назви наклейок — теж авторитетні, з бібліотеки
+    const { data: stickerRows } = await supabase.from("stickers").select("name").eq("is_active", true);
+    for (const s of stickerRows ?? []) stickerNames.add(s.name);
     // активні акції на ці товари — щоб ціна замовлення збігалася з тією, що бачить клієнт
     const { data: promos } = await supabase
       .from("promos")
@@ -108,9 +159,10 @@ export async function POST(req: Request) {
 
   // Кожна позиція мусить резолвитись у доступний товар з БД.
   // Ціна й назва — ВИКЛЮЧНО з БД (ніколи з клієнта), інакше — відмова.
-  const lineItems: { productId: string; name: string; price: number; qty: number }[] = [];
+  const lineItems: LineItem[] = [];
   for (const i of items) {
-    const db = fromDb.get(i.id);
+    const pid = productIdOf(i);
+    const db = fromDb.get(pid);
     if (!db) {
       return NextResponse.json({ ok: false, error: "item_unavailable" }, { status: 400 });
     }
@@ -118,13 +170,29 @@ export async function POST(req: Request) {
     if (qty < 1 || qty > MAX_QTY) {
       return NextResponse.json({ ok: false, error: "invalid_qty" }, { status: 400 });
     }
-    const promoP = promoPrice.get(i.id);
+
+    // опції: приймаємо лише ті значення, які реально налаштовані на товарі
+    const size = db.sizes.includes(String(i.options?.size ?? "")) ? String(i.options!.size) : undefined;
+    const color = db.colors.includes(String(i.options?.color ?? "")) ? String(i.options!.color) : undefined;
+    const sticker =
+      db.stickerOption && stickerNames.has(String(i.options?.sticker ?? "")) ? String(i.options!.sticker) : undefined;
+
+    // обовʼязкові опції (якщо товар їх має) мусять бути вибрані
+    if ((db.sizes.length && !size) || (db.colors.length && !color)) {
+      return NextResponse.json({ ok: false, error: "options_required" }, { status: 400 });
+    }
+
+    const promoP = promoPrice.get(pid);
+    const base = promoP != null ? Math.min(db.price, promoP) : db.price;
+    const stickerPrice = sticker ? db.stickerPrice : 0;
+
     lineItems.push({
-      productId: i.id,
+      productId: pid,
       name: db.name,
-      // акційна ціна, якщо вона є й нижча за каталожну
-      price: promoP != null ? Math.min(db.price, promoP) : db.price,
+      // акційна ціна, якщо вона є й нижча за каталожну, + доплата за наклейку
+      price: base + stickerPrice,
       qty,
+      options: size || color || sticker ? { size, color, sticker, stickerPrice: stickerPrice || undefined } : null,
     });
   }
   const subtotal = lineItems.reduce((s, i) => s + i.price * i.qty, 0);
@@ -154,7 +222,10 @@ export async function POST(req: Request) {
     orderId = order.id;
 
     const { error: itemsErr } = await supabase.from("order_items").insert(
-      lineItems.map((i) => ({ order_id: orderId, product_id: i.productId, product_name: i.name, price: i.price, quantity: i.qty }))
+      lineItems.map((i) => ({
+        order_id: orderId, product_id: i.productId, product_name: i.name,
+        price: i.price, quantity: i.qty, options: i.options,
+      }))
     );
     if (itemsErr) throw itemsErr;
     dbSaved = true;
@@ -163,7 +234,10 @@ export async function POST(req: Request) {
   }
 
   // ---- Сповіщення в Telegram (за авторитетними цінами) ----
-  const lines = lineItems.map((i) => `• ${esc(i.name)} × ${i.qty} — ${i.price * i.qty} грн`);
+  const lines = lineItems.flatMap((i) => {
+    const opts = optionsLine(i.options);
+    return [`• ${esc(i.name)} × ${i.qty} — ${i.price * i.qty} грн`, ...(opts ? [`   ↳ ${esc(opts)}`] : [])];
+  });
   const msg = [
     "🛒 <b>НОВЕ ЗАМОВЛЕННЯ</b>",
     "",

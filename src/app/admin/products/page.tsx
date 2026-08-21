@@ -5,31 +5,57 @@ import Modal from "@/components/admin/Modal";
 import { downscaleImage } from "@/lib/clientImage";
 import {
   useDbProducts, useDbCategories,
-  dbCreateProduct, dbUpdateProduct, dbSetAvailable, dbSoftDelete, dbUploadImage,
+  dbCreateProduct, dbUpdateProduct, dbSetAvailability, dbSoftDelete, dbUploadImage,
   type DbProduct, type ProductInput,
 } from "@/features/admin/db";
 import { useAdminAuth } from "@/features/admin/AdminAuthContext";
-import type { Badge } from "@/lib/types";
+import type { Badge, Availability, ProductColor } from "@/lib/types";
+import { EditButton, DeleteButton } from "@/components/admin/IconButtons";
 import s from "@/components/admin/admin.module.css";
 
 const BADGES: Badge[] = ["", "ХІТ", "НОВЕ"];
 
+// Три статуси наявності. out_of_stock — товар зникає з вітрини.
+const AVAILABILITY: { value: Availability; label: string; hint: string }[] = [
+  { value: "in_stock",     label: "В наявності",      hint: "Показується на сайті, звичайне замовлення." },
+  { value: "preorder",     label: "Передзамовлення",  hint: "Показується на сайті з поміткою: можлива затримка, деталі узгоджуємо в особистих." },
+  { value: "out_of_stock", label: "Немає в наявності", hint: "На сайті не показується." },
+];
+const availLabel = (a: Availability) => AVAILABILITY.find((x) => x.value === a)?.label ?? a;
+
+// Розміри одягу та типова палітра футболок (можна знімати/додавати в формі товару).
+const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const PALETTE: ProductColor[] = [
+  { name: "Білий",     hex: "#FFFFFF" },
+  { name: "Чорний",    hex: "#111111" },
+  { name: "Блакитний", hex: "#8ECAE6" },
+  { name: "Жовтий",    hex: "#F2C14E" },
+  { name: "Червоний",  hex: "#C1392B" },
+  { name: "Хакі",      hex: "#6B705C" },
+];
+
 interface Draft {
   categoryId: string;
-  name: string; price: number; weight: string; badge: Badge;
-  desc: string; photo: string | null; isAvailable: boolean;
+  name: string; nameRu: string; price: number; weight: string; weightRu: string; badge: Badge;
+  desc: string; descRu: string; photo: string | null; availability: Availability;
+  sizes: string[]; colors: ProductColor[];
+  stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
 }
 
 const emptyDraft = (categoryId: string): Draft => ({
-  categoryId, name: "", price: 0, weight: "", badge: "",
-  desc: "", photo: null, isAvailable: true,
+  categoryId, name: "", nameRu: "", price: 0, weight: "", weightRu: "", badge: "",
+  desc: "", descRu: "", photo: null, availability: "in_stock",
+  sizes: [], colors: [], stickerOption: false, stickerPrice: 75, sizeChart: null,
 });
 
 // Заповнюємо повний ProductInput; поля, яких немає у спрощеній схемі, — дефолтами.
 const toInput = (d: Draft): ProductInput => ({
   categoryId: d.categoryId || null,
-  name: d.name.trim(), price: d.price, weight: d.weight, badge: d.badge,
-  desc: d.desc, photo: d.photo, isAvailable: d.isAvailable,
+  name: d.name.trim(), nameRu: d.nameRu.trim(), price: d.price,
+  weight: d.weight, weightRu: d.weightRu, badge: d.badge,
+  desc: d.desc, descRu: d.descRu, photo: d.photo, availability: d.availability,
+  sizes: d.sizes, colors: d.colors,
+  stickerOption: d.stickerOption, stickerPrice: d.stickerPrice, sizeChart: d.sizeChart,
 });
 
 export default function ProductsPage() {
@@ -42,6 +68,7 @@ export default function ProductsPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [chartBusy, setChartBusy] = useState(false);
   const [catFilter, setCatFilter] = useState<string>("all"); // id категорії | "all" | "__none__"
   const [query, setQuery] = useState("");
 
@@ -74,8 +101,11 @@ export default function ProductsPage() {
   const openEdit = (p: DbProduct) => {
     setEditing(p);
     setDraft({
-      categoryId: p.categoryId ?? "", name: p.name, price: p.price, weight: p.weight,
-      badge: p.badge, desc: p.desc, photo: p.photo, isAvailable: p.isAvailable,
+      categoryId: p.categoryId ?? "", name: p.name, nameRu: p.nameRu, price: p.price,
+      weight: p.weight, weightRu: p.weightRu,
+      badge: p.badge, desc: p.desc, descRu: p.descRu, photo: p.photo, availability: p.availability,
+      sizes: p.sizes, colors: p.colors,
+      stickerOption: p.stickerOption, stickerPrice: p.stickerPrice, sizeChart: p.sizeChart,
     });
   };
   const close = () => { setDraft(null); setEditing(null); };
@@ -90,7 +120,13 @@ export default function ProductsPage() {
     refetch();
   };
 
-  const toggleAvailable = async (p: DbProduct) => { await dbSetAvailable(p.id, !p.isAvailable); refetch(); };
+  // клік по бейджу в таблиці перемикає статус по колу: наявність → передзамовлення → немає
+  const cycleAvailability = async (p: DbProduct) => {
+    const i = AVAILABILITY.findIndex((a) => a.value === p.availability);
+    const next = AVAILABILITY[(i + 1) % AVAILABILITY.length].value;
+    await dbSetAvailability(p.id, next);
+    refetch();
+  };
   const remove = async (p: DbProduct) => {
     if (!confirm(`Видалити товар «${p.name}»?`)) return;
     await dbSoftDelete(p.id); refetch();
@@ -113,6 +149,25 @@ export default function ProductsPage() {
     if (r.error) { alert("Помилка завантаження: " + r.error); return; }
     set("photo", r.url ?? null);
   };
+
+  const handleChartFile = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("Оберіть зображення."); return; }
+    setChartBusy(true);
+    const prepared = await downscaleImage(file, 1600, 0.9);
+    const r = await dbUploadImage(prepared, "products");
+    setChartBusy(false);
+    if (r.error) { alert("Помилка завантаження: " + r.error); return; }
+    set("sizeChart", r.url ?? null);
+  };
+
+  const toggleSize = (sz: string) =>
+    set("sizes", draft!.sizes.includes(sz) ? draft!.sizes.filter((x) => x !== sz) : [...draft!.sizes, sz].sort((a, b) => SIZES.indexOf(a) - SIZES.indexOf(b)));
+
+  const toggleColor = (c: ProductColor) =>
+    set("colors", draft!.colors.some((x) => x.name === c.name)
+      ? draft!.colors.filter((x) => x.name !== c.name)
+      : [...draft!.colors, c]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -154,7 +209,7 @@ export default function ProductsPage() {
         <div className={s.tableWrap}>
           <table className={s.table}>
             <thead>
-              <tr><th>Назва</th><th>Ціна</th><th>Вага</th><th>Бейдж</th><th>В наявності</th><th style={{ textAlign: "right" }}>Дії</th></tr>
+              <tr><th>Назва</th><th>Ціна</th><th>Вага</th><th>Бейдж</th><th>Наявність</th><th style={{ textAlign: "right" }}>Дії</th></tr>
             </thead>
             <tbody>
               {loading ? (
@@ -178,18 +233,20 @@ export default function ProductsPage() {
                       <td data-label="Ціна" className={s.colHideMobile}>{p.price} грн</td>
                       <td data-label="Вага" className={s.colHideMobile} style={{ color: "var(--text-secondary)", fontSize: 12 }}>{p.weight || "—"}</td>
                       <td data-label="Бейдж" className={s.colHideMobile}>{p.badge ? <span className={`${s.pill} ${s.pillEditor}`}>{p.badge}</span> : "—"}</td>
-                      <td data-label="В наявності">
-                        <button className={`${s.pill} ${p.isAvailable ? s.pillOn : s.pillOff}`} style={{ cursor: "pointer", border: "none" }}
-                          onClick={() => toggleAvailable(p)}>
-                          {p.isAvailable ? "Так" : "Ні"}
+                      <td data-label="Наявність">
+                        <button
+                          className={`${s.pill} ${availPillClass(p.availability)}`}
+                          style={{ cursor: "pointer", border: "none" }}
+                          title="Натисніть, щоб змінити статус"
+                          onClick={() => cycleAvailability(p)}
+                        >
+                          {availLabel(p.availability)}
                         </button>
                       </td>
                       <td>
                         <div className={s.rowActions}>
-                          <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => openEdit(p)}>Редагувати</button>
-                          {isAdmin && (
-                            <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => remove(p)}>Видалити</button>
-                          )}
+                          <EditButton onClick={() => openEdit(p)} />
+                          {isAdmin && <DeleteButton onClick={() => remove(p)} />}
                         </div>
                       </td>
                     </tr>
@@ -233,8 +290,13 @@ export default function ProductsPage() {
               </p>
             </Field>
 
-            <Field label="Назва">
+            <Field label="Назва (укр)">
               <input className={s.input} value={draft.name} onChange={(e) => set("name", e.target.value)} />
+            </Field>
+
+            <Field label="Назва (рос)">
+              <input className={s.input} value={draft.nameRu} placeholder="Порожньо — покажемо українську"
+                onChange={(e) => set("nameRu", e.target.value)} />
             </Field>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
@@ -253,6 +315,9 @@ export default function ProductsPage() {
               <Field label="Вага / об'єм" grow>
                 <input className={s.input} placeholder="0.5 л · 250 г · 10 шт" value={draft.weight} onChange={(e) => set("weight", e.target.value)} />
               </Field>
+              <Field label="Вага (рос)" grow>
+                <input className={s.input} placeholder="0.5 л · 250 г · 10 шт" value={draft.weightRu} onChange={(e) => set("weightRu", e.target.value)} />
+              </Field>
               <Field label="Бейдж">
                 <select className={s.input} value={draft.badge} onChange={(e) => set("badge", e.target.value as Badge)}>
                   {BADGES.map((b) => <option key={b} value={b}>{b || "—"}</option>)}
@@ -260,15 +325,100 @@ export default function ProductsPage() {
               </Field>
             </div>
 
-            <Field label="Опис">
+            <Field label="Опис (укр)">
               <textarea className={s.input} rows={3} placeholder="Короткий опис товару (необов'язково)"
                 value={draft.desc} onChange={(e) => set("desc", e.target.value)} style={{ resize: "vertical", minHeight: 72 }} />
             </Field>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <input type="checkbox" checked={draft.isAvailable} onChange={(e) => set("isAvailable", e.target.checked)} />
-              <span style={{ fontSize: 13, color: "var(--text-primary)" }}>В наявності (показувати на сайті)</span>
-            </label>
+            <Field label="Опис (рос)">
+              <textarea className={s.input} rows={3} placeholder="Порожньо — покажемо українську версію"
+                value={draft.descRu} onChange={(e) => set("descRu", e.target.value)} style={{ resize: "vertical", minHeight: 72 }} />
+            </Field>
+
+            <Field label="Наявність">
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {AVAILABILITY.map((a) => (
+                  <button
+                    key={a.value}
+                    type="button"
+                    className={`chip square ${draft.availability === a.value ? "active" : ""}`}
+                    onClick={() => set("availability", a.value)}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+              <p className={s.hint} style={{ fontSize: 11, marginTop: 6 }}>
+                {AVAILABILITY.find((a) => a.value === draft.availability)?.hint}
+              </p>
+            </Field>
+
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+              <div className={s.fieldLabel} style={{ marginBottom: 4 }}>Опції одягу</div>
+              <p className={s.hint} style={{ fontSize: 11, marginBottom: 12 }}>
+                Заповнюйте лише для одягу. Порожні розміри/кольори — на сайті селекторів немає.
+              </p>
+
+              <Field label="Розміри">
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {SIZES.map((sz) => (
+                    <button key={sz} type="button"
+                      className={`chip square ${draft.sizes.includes(sz) ? "active" : ""}`}
+                      onClick={() => toggleSize(sz)}>
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field label="Кольори">
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {PALETTE.map((c) => {
+                    const on = draft.colors.some((x) => x.name === c.name);
+                    return (
+                      <button key={c.name} type="button" title={c.name} onClick={() => toggleColor(c)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", cursor: "pointer",
+                          background: on ? "var(--bg-elevated)" : "transparent",
+                          border: `1px solid ${on ? "var(--accent)" : "var(--border-light)"}`,
+                          color: on ? "var(--accent)" : "var(--text-secondary)", fontSize: 12, borderRadius: 6,
+                        }}>
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", background: c.hex, border: "1px solid var(--border-light)" }} />
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 14 }}>
+                <Field label="Наклейка" grow>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                    <input type="checkbox" checked={draft.stickerOption} onChange={(e) => set("stickerOption", e.target.checked)} />
+                    <span style={{ fontSize: 13, color: "var(--text-primary)" }}>Дозволити вибір наклейки</span>
+                  </label>
+                </Field>
+                <Field label="Доплата, грн">
+                  <input className={`${s.input} no-spin`} type="number" disabled={!draft.stickerOption}
+                    value={draft.stickerPrice || ""} onChange={(e) => set("stickerPrice", e.target.value === "" ? 0 : Number(e.target.value))} />
+                </Field>
+              </div>
+
+              <Field label="Розмірна сітка (картинка)">
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ width: 64, height: 64, flexShrink: 0, borderRadius: 6, border: "1px solid var(--border-light)", background: draft.sizeChart ? `#fff url(${draft.sizeChart}) center/contain no-repeat` : "var(--bg-elevated)" }} />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <label className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} style={{ cursor: chartBusy ? "wait" : "pointer", opacity: chartBusy ? 0.6 : 1 }}>
+                      {chartBusy ? "Завантаження…" : draft.sizeChart ? "Замінити" : "Завантажити"}
+                      <input type="file" accept="image/*" hidden disabled={chartBusy} onChange={(e) => handleChartFile(e.target.files?.[0])} />
+                    </label>
+                    {draft.sizeChart && (
+                      <button type="button" className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => set("sizeChart", null)}>Прибрати</button>
+                    )}
+                  </div>
+                </div>
+              </Field>
+            </div>
 
             <p className={s.hint} style={{ fontSize: 11 }}>
               Щоб товар зʼявився у блоці «Популярне» на сайті — встановіть бейдж «ХІТ».
@@ -278,6 +428,12 @@ export default function ProductsPage() {
       )}
     </div>
   );
+}
+
+function availPillClass(a: Availability): string {
+  if (a === "in_stock") return s.pillOn;
+  if (a === "preorder") return s.pillPreorder;
+  return s.pillOff;
 }
 
 function GroupRows({ name, count, children }: { name: string; count: number; children: React.ReactNode }) {

@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/features/locale/LocaleContext";
+import LocaleSwitch from "./LocaleSwitch";
 import { Icon } from "./icons";
 import { CONTACTS, ASSET_ICONS } from "@/data/site";
 import { useCart } from "@/features/cart/CartContext";
-import { usePublicCategories, usePublicNavSpecials } from "@/features/publicData";
+import { usePublicCategories, usePublicNavSpecials, useLocalized } from "@/features/publicData";
 import type { NavCategory } from "@/lib/types";
 
 function BrandMark() {
+  const brand = useT()("brand");
+
   return (
     <a
       href="#"
@@ -20,7 +24,7 @@ function BrandMark() {
           color: "var(--text-primary)", whiteSpace: "nowrap",
         }}
       >
-        ІСИХАСТ
+        {brand}
       </div>
       {/* восьмиконечний хрест праворуч від назви */}
       <Icon.Cross width="17" height="17" style={{ marginLeft: 2, flexShrink: 0, color: "var(--accent)" }} />
@@ -41,6 +45,7 @@ export default function Header({
 }) {
   const { count } = useCart();
   const cats = usePublicCategories({ navOnly: true });
+  const { categoryName } = useLocalized();
   const specials = usePublicNavSpecials();
   const [scrolled, setScrolled] = useState(false);
 
@@ -53,7 +58,7 @@ export default function Header({
 
   const navItems: NavCategory[] = [
     ...specials,
-    ...cats.map((c) => ({ id: c.id, label: c.name, filter: { category: c.slug } })),
+    ...cats.map((c) => ({ id: c.id, label: categoryName(c), filter: { category: c.slug } })),
   ];
 
   return (
@@ -88,6 +93,7 @@ export default function Header({
 
         {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "flex-end" }}>
+          <span className="header-locale"><LocaleSwitch /></span>
           <div className="desktop-only" style={{ textAlign: "right" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", whiteSpace: "nowrap" }}>
               <Icon.Phone width="13" height="13" style={{ color: "var(--accent)" }} />

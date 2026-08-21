@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import LocaleSwitch from "./LocaleSwitch";
+import { useT } from "@/features/locale/LocaleContext";
 import Link from "next/link";
 import { Icon } from "./icons";
 import { CONTACTS, ASSET_ICONS } from "@/data/site";
@@ -15,6 +17,7 @@ export default function MobileMenu({
   onClose: () => void;
   onNavClick: (cat: NavCategory) => void;
 }) {
+  const brand = useT()("brand");
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -44,7 +47,7 @@ export default function MobileMenu({
         {/* header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: "var(--header-h)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-church)", fontSize: 20, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)" }}>
-            ІСИХАСТ
+            {brand}
             <Icon.Cross width="14" height="14" style={{ color: "var(--accent)" }} />
           </div>
           <button
@@ -72,8 +75,8 @@ export default function MobileMenu({
           </a>
 
           <a
-            href="#about"
-            onClick={(e) => { e.preventDefault(); handle({ id: "about", label: "Про нас", scrollTo: "about" }); }}
+            href="#hero"
+            onClick={(e) => { e.preventDefault(); handle({ id: "about", label: "Про нас", scrollTo: "hero" }); }}
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "16px 4px", borderBottom: "1px solid var(--border)", textDecoration: "none",
@@ -102,6 +105,12 @@ export default function MobileMenu({
               <Icon.Arrow width="18" height="18" style={{ color: "var(--text-secondary)" }} />
             </Link>
           ))}
+
+          {/* мова — тут теж, бо на вузьких екранах перемикач із шапки ховається */}
+          <div style={{ marginTop: 26 }}>
+            <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Мова</div>
+            <LocaleSwitch />
+          </div>
 
           <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: 14 }}>
             <a href={`tel:${CONTACTS.phone.replace(/[^+\d]/g, "")}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "var(--text-primary)" }}>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandName from "@/components/BrandName";
 import CartHost from "./CartHost";
 import { Icon } from "@/components/icons";
 import { CONTACTS, TEXTS } from "@/data/site";
@@ -26,7 +27,7 @@ export default function CatalogShell({
             href="/"
             style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-church)", fontSize: 22, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)", textDecoration: "none" }}
           >
-            ІСИХАСТ
+            <BrandName />
             <Icon.Cross width="15" height="15" style={{ color: "var(--accent)" }} />
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>

@@ -2,7 +2,7 @@ import "server-only";
 import { storageConfigured, storagePut } from "@/lib/storage";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 МБ на вихідний файл
-const FOLDERS = new Set(["products", "banners"]);
+const FOLDERS = new Set(["products", "banners", "stickers"]);
 
 export type UploadResult = { url: string } | { error: string; status: number };
 

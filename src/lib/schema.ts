@@ -17,7 +17,7 @@ export function storeSchema() {
     "@context": "https://schema.org",
     "@type": "Store",
     "@id": STORE_ID,
-    name: "ІСИХАСТ",
+    name: "ІСІХАСТ",
     description: TEXTS.footerTagline,
     url: SITE_URL,
     ...(phone ? { telephone: phone } : {}),

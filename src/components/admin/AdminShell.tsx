@@ -16,12 +16,14 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
       { href: "/admin", label: "Огляд" },
       { href: "/admin/categories", label: "Категорії" },
       { href: "/admin/products", label: "Товари" },
+      { href: "/admin/stickers", label: "Наклейки" },
     ],
   },
   {
     group: "Маркетинг",
     items: [
       { href: "/admin/promos", label: "Акції" },
+      { href: "/admin/news", label: "Новини (Telegram)" },
     ],
   },
   {
@@ -30,6 +32,7 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
       { href: "/admin/orders/board", label: "Дошка замовлень" },
       { href: "/admin/orders", label: "Замовлення (список)" },
       { href: "/admin/reviews", label: "Відгуки" },
+      { href: "/admin/gallery", label: "Галерея клієнтів" },
     ],
   },
   {
@@ -41,11 +44,23 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   },
 ];
 
+/** Група меню, якій належить поточний маршрут (для авто-розгортання). */
+function groupOfPath(path: string): string | undefined {
+  return NAV.find((g) =>
+    g.items.some((i) => i.href === path || (i.href !== "/admin" && path.startsWith(i.href + "/")))
+  )?.group;
+}
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const { user, loading, denied, logout } = useAdminAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [navOpen, setNavOpen] = useState(false);
+  // розгорнуті групи меню; за замовчуванням відкрита та, де поточна сторінка
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    const g = groupOfPath(pathname);
+    return g ? [g] : [NAV[0].group];
+  });
   // куди йде перехід — для миттєвого візуального відгуку (спінер + підсвітка),
   // щоб не складалося враження зависання й не тиснули кілька разів
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -53,7 +68,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const isLogin = pathname === "/admin/login";
 
   // перехід завершено (маршрут змінився) — прибираємо індикатор
-  useEffect(() => { setNavOpen(false); setPendingHref(null); }, [pathname]);
+  useEffect(() => {
+    setNavOpen(false);
+    setPendingHref(null);
+    const g = groupOfPath(pathname);
+    if (g) setOpenGroups((prev) => (prev.includes(g) ? prev : [...prev, g]));
+  }, [pathname]);
+
+  const toggleGroup = (group: string) =>
+    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((x) => x !== group) : [...prev, group]));
 
   const signOut = async () => { await logout(); router.replace("/admin/login"); };
 
@@ -97,32 +120,49 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className={`${s.sidebar} ${navOpen ? s.sidebarOpen : ""}`}>
         <Link href="/admin" className={s.brand}>
           <div>
-            <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІСИХАСТ</div>
+            <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІСІХАСТ</div>
             <div className={s.brandSub}>Адмінпанель</div>
           </div>
         </Link>
 
-        {NAV.map((g) => (
-          <div key={g.group}>
-            <div className={s.navGroupLabel}>{g.group}</div>
-            {g.items.map((it) => {
-              const active = pathname === it.href;
-              const pending = pendingHref === it.href;
-              return (
-                <Link
-                  key={it.href}
-                  href={it.href}
-                  onClick={() => { if (pathname !== it.href) setPendingHref(it.href); }}
-                  className={`${s.navItem} ${active || pending ? s.navItemActive : ""}`}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
-                >
-                  {it.label}
-                  {pending && <Spinner />}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+        {NAV.map((g) => {
+          const open = openGroups.includes(g.group);
+          return (
+            <div key={g.group} className={s.navGroup}>
+              <button
+                type="button"
+                className={s.navGroupBtn}
+                onClick={() => toggleGroup(g.group)}
+                aria-expanded={open}
+              >
+                <span>{g.group}</span>
+                <Chevron open={open} />
+              </button>
+
+              <div className={`${s.navGroupBody} ${open ? s.navGroupBodyOpen : ""}`}>
+                <div className={s.navGroupItems}>
+                  {g.items.map((it) => {
+                    const active = pathname === it.href;
+                    const pending = pendingHref === it.href;
+                    return (
+                      <Link
+                        key={it.href}
+                        href={it.href}
+                        tabIndex={open ? undefined : -1}
+                        onClick={() => { if (pathname !== it.href) setPendingHref(it.href); }}
+                        className={`${s.navItem} ${active || pending ? s.navItemActive : ""}`}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
+                      >
+                        {it.label}
+                        {pending && <Spinner />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
 
         <div style={{ marginTop: "auto", paddingTop: 16 }}>
           <Link href="/" className={s.navItem}>← На сайт</Link>
@@ -151,6 +191,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </div>
       <ScrollTop />
     </div>
+  );
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+      strokeLinecap="round" strokeLinejoin="round"
+      className={`${s.navChevron} ${open ? s.navChevronOpen : ""}`}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
 

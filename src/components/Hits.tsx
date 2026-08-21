@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ArrowBtn from "./ArrowBtn";
 import MenuCard from "./MenuCard";
-import { usePublicCatalog } from "@/features/publicData";
+import { usePublicCatalog, usePublicNavSpecials, useGloss } from "@/features/publicData";
 import { useIsMobile } from "@/features/useIsMobile";
 import type { Product } from "@/lib/types";
 
@@ -19,14 +19,24 @@ export default function Hits({
   const isMobile = useIsMobile();
   const catalog = usePublicCatalog();
 
-  // три вкладки зі своїми наборами товарів
+  // вкладки — ті самі спец-пункти, що й у навігації: вимкнув у адмінці → зник і тут
+  const specials = usePublicNavSpecials();
+  const labels = {
+    hity: useGloss("nav_hity"),
+    novynky: useGloss("nav_novynky"),
+    aktsii: useGloss("nav_aktsii"),
+  };
+
   const tabs = useMemo(() => {
-    return [
-      { key: "new", label: "Новинки", items: catalog.filter((m) => m.badge === "НОВЕ") },
-      { key: "hit", label: "Хіти", items: catalog.filter((m) => m.badge === "ХІТ") },
-      { key: "promo", label: "Акції", items: catalog.filter((m) => m.oldPrice != null) },
-    ];
-  }, [catalog]);
+    const byId: Record<string, Product[]> = {
+      novynky: catalog.filter((m) => m.badge === "НОВЕ"),
+      hity: catalog.filter((m) => m.badge === "ХІТ"),
+      aktsii: catalog.filter((m) => m.oldPrice != null),
+    };
+    return specials
+      .filter((sp) => byId[sp.id])
+      .map((sp) => ({ key: sp.id, label: labels[sp.id as keyof typeof labels] ?? sp.label, items: byId[sp.id] }));
+  }, [catalog, specials, labels.hity, labels.novynky, labels.aktsii]);
 
   const [tabIdx, setTabIdx] = useState(0);
   const [page, setPage] = useState(0);
@@ -41,8 +51,8 @@ export default function Hits({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabs]);
 
-  // якщо порожньо геть усюди — секцію не показуємо
-  if (tabs.every((t) => t.items.length === 0)) return null;
+  // немає активних вкладок або товарів — секцію не показуємо
+  if (!tabs.length || tabs.every((t) => t.items.length === 0)) return null;
 
   const active = tabs[tabIdx];
   const items = active.items;
@@ -88,7 +98,7 @@ export default function Hits({
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 20 }}>
             {visible.map((item) => (
-              <MenuCard key={item.id} item={item} onAdd={onAdd} onCardClick={onCardClick} compact />
+              <MenuCard key={item.id} item={item} onAdd={onAdd} onCardClick={onCardClick} />
             ))}
           </div>
         )}

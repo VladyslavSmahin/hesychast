@@ -9,6 +9,7 @@ import {
 import { useAdminAuth } from "@/features/admin/AdminAuthContext";
 import BannersPanel from "@/components/admin/BannersPanel";
 import AdminSelect from "@/components/admin/AdminSelect";
+import { EditButton, DeleteButton } from "@/components/admin/IconButtons";
 import s from "@/components/admin/admin.module.css";
 
 type Draft = PromoInput;
@@ -90,8 +91,8 @@ export default function PromosPage() {
                   </td>
                   <td>
                     <div className={s.rowActions}>
-                      <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => openEdit(p)}>Редагувати</button>
-                      {isAdmin && <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => remove(p)}>Видалити</button>}
+                      <EditButton onClick={() => openEdit(p)} />
+                      {isAdmin && <DeleteButton onClick={() => remove(p)} />}
                     </div>
                   </td>
                 </tr>

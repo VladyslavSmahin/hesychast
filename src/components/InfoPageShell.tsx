@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandName from "@/components/BrandName";
 import { Icon } from "@/components/icons";
 
 /** Простий каркас для інфо-сторінок (оферта, про нас тощо) у стилі сайту. */
@@ -17,7 +18,7 @@ export default function InfoPageShell({ title, children }: { title: string; chil
             href="/"
             style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-church)", fontSize: 22, fontWeight: 700, letterSpacing: 4, color: "var(--text-primary)", textDecoration: "none" }}
           >
-            ІСИХАСТ
+            <BrandName />
             <Icon.Cross width="15" height="15" style={{ color: "var(--accent)" }} />
           </Link>
           <Link href="/" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}>

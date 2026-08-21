@@ -91,7 +91,7 @@ export default function HeroPromoSlider() {
           {/* перший банер — LCP головної, тому вантажимо його одразу (priority) */}
           <Image
             src={b.image}
-            alt={`Акційна пропозиція ${i + 1} — ІСИХАСТ`}
+            alt={`Акційна пропозиція ${i + 1} — ІСІХАСТ`}
             fill
             sizes="(max-width: 900px) 100vw, 520px"
             priority={i === 0}

@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { Icon, PhotoSlot } from "./icons";
-import { useGloss } from "@/features/publicData";
+import { PreorderTag } from "./PreorderTag";
+import { hasOptions } from "./ProductOptions";
+import { useT } from "@/features/locale/LocaleContext";
+import { useGloss, useLocalized } from "@/features/publicData";
 import type { Product } from "@/lib/types";
 
 // Картка — це посилання на /tovar/<slug>: пошуковик бачить звичайне <a href>
@@ -20,6 +23,8 @@ export default function MenuCard({
   /** компактний варіант (для блоку «Хіти меню») */
   compact?: boolean;
 }) {
+  const t = useT();
+  const { productName, productWeight } = useLocalized();
   const badgeHit = useGloss("badge_hit");
   const badgeNew = useGloss("badge_new");
   const badgeLabel = item.badge === "ХІТ" ? badgeHit : item.badge === "НОВЕ" ? badgeNew : item.badge;
@@ -28,6 +33,8 @@ export default function MenuCard({
   const titleSize = compact ? 15 : 18;
   const priceSize = compact ? 16 : 18;
   const addSize = compact ? 30 : 34;
+  // ціна 0 — товар ще не в продажу: замість фото заглушка, кнопки «+» немає
+  const soon = item.price <= 0;
 
   return (
     <Link
@@ -48,7 +55,7 @@ export default function MenuCard({
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: compact ? undefined : "var(--card-ar, 1 / 1)" }}>
-        <PhotoSlot h={compact ? photoH : "100%"} photo={item.photo} alt={item.name} />
+        <PhotoSlot h={compact ? photoH : "100%"} photo={item.photo} alt={productName(item)} soon={soon} soonLabel={t("catalog.soon")} />
         {item.badge && (
           <div
             style={{
@@ -63,11 +70,16 @@ export default function MenuCard({
             {badgeLabel}
           </div>
         )}
+        {item.availability === "preorder" && (
+          <div style={{ position: "absolute", top: 8, right: 8 }}>
+            <PreorderTag />
+          </div>
+        )}
       </div>
 
       <div style={{ paddingTop: 0, paddingBottom: 4, flex: 1, display: "flex", flexDirection: "column" }}>
         <h3 style={{ fontFamily: "var(--font-display)", fontSize: titleSize, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.15, marginTop: "var(--card-title-mt, 10px)", marginBottom: compact ? 4 : 6 }}>
-          {item.name}
+          {productName(item)}
         </h3>
       </div>
 
@@ -75,16 +87,24 @@ export default function MenuCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-body)", fontSize: priceSize, fontWeight: 500, color: item.oldPrice ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, whiteSpace: "nowrap" }}>
             {item.oldPrice && <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)", textDecoration: "line-through", marginRight: 5 }}>{item.oldPrice}</span>}
-            {item.price} <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)" }}>грн</span>
+            {soon
+              ? <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-secondary)", letterSpacing: 1 }}>{t("catalog.soonShort")}</span>
+              : <>{item.price} <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)" }}>грн</span></>}
           </div>
           <div style={{ fontSize: compact ? 10 : 11, fontWeight: 400, color: "var(--text-secondary)", letterSpacing: 0.8, marginTop: 4, whiteSpace: "nowrap" }}>
-            {item.weight}
+            {productWeight(item)}
           </div>
         </div>
+        {!soon && (
         <button
           // всередині посилання: гасимо перехід, щоб «+» лише клав товар у кошик
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAdd(item); }}
-          aria-label="Додати"
+          // товар з опціями (розмір/колір/наклейка) не можна докинути одним кліком —
+          // відкриваємо картку, щоб покупець обрав
+          onClick={(e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (hasOptions(item)) onCardClick(item); else onAdd(item);
+          }}
+          aria-label={hasOptions(item) ? "Обрати опції" : "Додати"}
           style={{
             width: addSize, height: addSize, flexShrink: 0, background: "var(--bg-elevated)", border: "1px solid var(--border-light)",
             color: "var(--accent)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
@@ -95,6 +115,7 @@ export default function MenuCard({
         >
           <Icon.Plus width="13" height="13" />
         </button>
+        )}
       </div>
     </Link>
   );

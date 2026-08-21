@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Modal from "@/components/admin/Modal";
-import { useDbOrders, dbSetOrderStatus, CARRIER_LABEL, type DbOrder, type OrderStatus } from "@/features/admin/db";
+import { useDbOrders, dbSetOrderStatus, CARRIER_LABEL, type DbOrder, type OrderStatus , orderItemOptions } from "@/features/admin/db";
 import s from "@/components/admin/admin.module.css";
 
 const STATUSES: { value: OrderStatus; label: string }[] = [
@@ -110,7 +110,12 @@ export default function OrdersPage() {
                 <tbody>
                   {selected.items.map((it, i) => (
                     <tr key={i}>
-                      <td data-label="Позиція">{it.name}</td>
+                      <td data-label="Позиція">
+                        {it.name}
+                        {orderItemOptions(it) && (
+                          <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 3 }}>{orderItemOptions(it)}</div>
+                        )}
+                      </td>
                       <td data-label="Ціна" style={{ color: "var(--text-secondary)" }}>{it.price} грн</td>
                       <td data-label="К-ть">{it.quantity}</td>
                       <td data-label="Сума" style={{ textAlign: "right" }}>{it.price * it.quantity} грн</td>

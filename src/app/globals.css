@@ -192,6 +192,16 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* місце знизу під фіксовану панель категорій на мобільному */
+/* Hero: текст «Про нас» на всю ширину — двома колонками на широких екранах */
+.hero-about-text { column-count: 2; column-gap: 64px; max-width: 1180px; margin: 0 auto; }
+/* Блок новин з Telegram */
+:root { --news-cols: repeat(4, 1fr); --gallery-card: 300px; }
+/* слайдер галереї — ховаємо смугу прокрутки, гортання лишається */
+.gallery-track::-webkit-scrollbar { display: none; }
+/* ряд наклейок на сторінці товару — гортається вбік, не займає пів-екрана */
+.sticker-row::-webkit-scrollbar { display: none; }
+.hero-about-text p:last-child { margin-bottom: 0; }
+
 @media (max-width: 860px) {
   body { padding-bottom: 84px; }
 }
@@ -230,6 +240,8 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
     --promo-cols: 1fr;
     --reviews-cols: 1fr;
     --map-cols: 1fr;
+    --news-cols: 1fr 1fr;
+    --gallery-card: 76vw;
     --footer-cols: 1fr 1fr;
     --footer-gap: 40px;
     --modal-cols: 1fr;
@@ -248,20 +260,24 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
   .hero-copy { text-align: center; }
   .hero-copy p { margin-left: auto; margin-right: auto; }
   /* Hero на мобілці: ейбраун → слайдер → кнопки (назва — лише в хедері) */
-  .hero-grid { display: flex !important; flex-direction: column; gap: 20px !important; align-items: stretch !important; }
-  .hero-copy { display: contents; }
-  .hero-eyebrow { order: 1; margin-bottom: 0 !important; }
+  /* Hero на мобілці: спершу текст і соцмережі, під ними — відео */
+  .hero-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .hero-copy { order: 1; }
   .hero-slider { order: 2; }
-  .hero-cta { order: 3; width: 100%; }
-  .hero-title, .hero-tagline, .hero-lead { display: none; }
+  .hero-about-text { column-count: 1; }
+  .hero-title { font-size: clamp(34px, 12vw, 60px) !important; }
   /* назва бренду — в один рядок */
-  .hero-title { font-size: clamp(24px, 9vw, 40px) !important; white-space: nowrap; }
   .hero-br { display: none; }
-  /* дві кнопки — в один ряд */
-  .hero-cta { justify-content: center; flex-wrap: nowrap; gap: 10px; }
-  .hero-cta .btn-primary, .hero-cta .btn-secondary {
-    flex: 1 1 0; min-width: 0; padding: 13px 6px; font-size: 10px; letter-spacing: 0.5px; white-space: nowrap;
-  }
+}
+
+/* Дуже вузькі екрани: шапка стискається, щоб бургер не вилазив */
+@media (max-width: 420px) {
+  .header-locale button { padding: 4px 6px !important; font-size: 10px !important; }
+  .burger { width: 38px !important; }
+}
+
+@media (max-width: 360px) {
+  .header-locale { display: none; }   /* мову перемикають у бічному меню */
 }
 
 @media (max-width: 520px) {

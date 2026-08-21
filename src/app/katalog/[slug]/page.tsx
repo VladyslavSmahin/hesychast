@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!found) return { title: "Категорію не знайдено" };
 
   const { category, products } = found;
-  const description = `${category.name} — ${products.length} ${plural(products.length)} у православній крамниці ІСИХАСТ. Мед із власної пасіки, церковне начиння та православний мерч.`;
+  const description = `${category.name} — ${products.length} ${plural(products.length)} у православній крамниці ІСІХАСТ. Мед із власної пасіки, церковне начиння та православний мерч.`;
 
   return {
     // бренд додає template з layout
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/katalog/${category.slug}` },
     openGraph: {
       type: "website",
-      title: `${category.name} — ІСИХАСТ`,
+      title: `${category.name} — ІСІХАСТ`,
       description,
       url: `/katalog/${category.slug}`,
       images: products.find((p) => p.photo)?.photo

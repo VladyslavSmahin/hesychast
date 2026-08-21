@@ -6,15 +6,16 @@ import ProductModal from "./ProductModal";
 import Hero from "./Hero";
 import Hits from "./Hits";
 import FullMenu from "./FullMenu";
-import ReviewForm from "./ReviewForm";
 import ReviewsList from "./ReviewsList";
+import GallerySection from "./GallerySection";
 import MapSection from "./MapSection";
-import AboutSection from "./AboutSection";
+import NewsSection from "./NewsSection";
 import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import MobileCategoryBar from "./MobileCategoryBar";
 import { useCart } from "@/features/cart/CartContext";
+import { useSectionOn } from "@/features/publicData";
 import type { NavCategory, Product } from "@/lib/types";
 
 type NavFilter = NonNullable<NavCategory["filter"]>;
@@ -23,6 +24,9 @@ const HEADER_OFFSET = 84;
 
 export default function HomeClient() {
   const { add } = useCart();
+  // вимкнені в адмінці блоки не рендеримо взагалі
+  const on = { hits: useSectionOn("hits"), catalog: useSectionOn("catalog"), clients: useSectionOn("clients"),
+    reviews: useSectionOn("reviews"), news: useSectionOn("news"), map: useSectionOn("map") };
   const [cartOpen, setCartOpen] = useState(false);
   const [navFilter, setNavFilter] = useState<NavFilter | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,21 +81,20 @@ export default function HomeClient() {
         menuOpen={menuOpen}
         onMenuToggle={() => setMenuOpen((v) => !v)}
       />
-      <Hero
-        onCtaOrder={() => setCartOpen(true)}
-        onCtaMenu={() => scrollTo("menu")}
-      />
-      <Hits onAdd={add} onCardClick={openProduct} />
-      <FullMenu
-        onAdd={add}
-        onCardClick={openProduct}
-        navFilter={navFilter}
-        setNavFilter={setNavFilter}
-      />
-      <ReviewForm />
-      <ReviewsList />
-      <MapSection />
-      <AboutSection />
+      <Hero />
+      {on.hits && <Hits onAdd={add} onCardClick={openProduct} />}
+      {on.catalog && (
+        <FullMenu
+          onAdd={add}
+          onCardClick={openProduct}
+          navFilter={navFilter}
+          setNavFilter={setNavFilter}
+        />
+      )}
+      {on.reviews && <ReviewsList />}
+      {on.clients && <GallerySection />}
+      {on.map && <MapSection />}
+      {on.news && <NewsSection />}
       <Footer />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
       <ProductModal item={modalItem} onClose={closeProduct} onAdd={add} />

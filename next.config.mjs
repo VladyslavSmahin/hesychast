@@ -8,9 +8,17 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    remotePatterns: supabaseHost
-      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    remotePatterns: [
+      ...(supabaseHost
+        ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
+        : []),
+      // прев'ю дописів із Telegram (блок «Новини»)
+      { protocol: "https", hostname: "cdn1.telesco.pe" },
+      { protocol: "https", hostname: "cdn2.telesco.pe" },
+      { protocol: "https", hostname: "cdn3.telesco.pe" },
+      { protocol: "https", hostname: "cdn4.telesco.pe" },
+      { protocol: "https", hostname: "cdn5.telesco.pe" },
+    ],
     formats: ["image/avif", "image/webp"],
   },
   poweredByHeader: false, // не розкривати "X-Powered-By: Next.js"

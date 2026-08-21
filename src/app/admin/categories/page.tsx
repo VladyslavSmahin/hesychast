@@ -5,18 +5,20 @@ import Modal from "@/components/admin/Modal";
 import Collapsible from "@/components/admin/Collapsible";
 import {
   useDbCategories, dbCreateCategory, dbUpdateCategory, dbDeleteCategory,
-  useDbNavSpecials, dbSetNavSpecialVisible, type DbCategory,
+  useDbNavSpecials, dbSetNavSpecialVisible, useDbSections, dbSetSectionVisible, type DbCategory,
 } from "@/features/admin/db";
 import { useAdminAuth } from "@/features/admin/AdminAuthContext";
+import { EditButton, DeleteButton } from "@/components/admin/IconButtons";
 import s from "@/components/admin/admin.module.css";
 
-interface EditDraft { id: string; name: string; slug: string; sortOrder: number; }
+interface EditDraft { id: string; name: string; nameRu: string; slug: string; sortOrder: number; }
 
 const slugify = (v: string) => v.trim().toLowerCase().replace(/\s+/g, "-");
 
 export default function CategoriesPage() {
   const { categories: cats, loading, refetch } = useDbCategories();
   const { specials, refetch: refetchSpecials } = useDbNavSpecials();
+  const { sections, refetch: refetchSections } = useDbSections();
   const { user } = useAdminAuth();
   const isAdmin = user?.role === "admin";
 
@@ -25,18 +27,23 @@ export default function CategoriesPage() {
     refetchSpecials();
   };
 
+  const toggleSection = async (id: string, visible: boolean) => {
+    await dbSetSectionVisible(sections, id, visible);
+    refetchSections();
+  };
+
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [edit, setEdit] = useState<EditDraft | null>(null);
   const [editErr, setEditErr] = useState("");
 
-  const openEdit = (c: DbCategory) => { setEdit({ id: c.id, name: c.name, slug: c.slug, sortOrder: c.sortOrder }); setEditErr(""); };
+  const openEdit = (c: DbCategory) => { setEdit({ id: c.id, name: c.name, nameRu: c.nameRu, slug: c.slug, sortOrder: c.sortOrder }); setEditErr(""); };
   const saveEdit = async () => {
     if (!edit) return;
     const nm = edit.name.trim(), sl = edit.slug.trim().toLowerCase();
     if (!nm || !sl) { setEditErr("Назва і slug обовʼязкові"); return; }
     if (cats.some((c) => c.id !== edit.id && c.slug === sl)) { setEditErr("Slug вже зайнятий"); return; }
-    await dbUpdateCategory(edit.id, { name: nm, slug: sl, sortOrder: edit.sortOrder });
+    await dbUpdateCategory(edit.id, { name: nm, nameRu: edit.nameRu.trim(), slug: sl, sortOrder: edit.sortOrder });
     setEdit(null);
     refetch();
   };
@@ -70,7 +77,7 @@ export default function CategoriesPage() {
         <form onSubmit={handleAdd} style={{ padding: 22 }}>
           <div className={s.formRow}>
             <div className={s.field} style={{ flex: 1, minWidth: 220 }}>
-              <span className={s.fieldLabel}>Назва</span>
+              <span className={s.fieldLabel}>Назва (укр)</span>
               <input className={s.input} placeholder="Напр. Десерти" value={name}
                 onChange={(e) => { setName(e.target.value); setError(""); }} />
             </div>
@@ -108,8 +115,8 @@ export default function CategoriesPage() {
                   </td>
                   <td>
                     <div className={s.rowActions}>
-                      <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => openEdit(c)}>Редагувати</button>
-                      {isAdmin && <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => remove(c.id)}>Видалити</button>}
+                      <EditButton onClick={() => openEdit(c)} />
+                      {isAdmin && <DeleteButton onClick={() => remove(c.id)} />}
                     </div>
                   </td>
                 </tr>
@@ -124,8 +131,8 @@ export default function CategoriesPage() {
         <div className={s.cardHead}><div className={s.cardTitle}>Спец-пункти навігації</div></div>
         <div style={{ padding: "8px 0" }}>
           <p className={s.hint} style={{ padding: "0 22px 8px" }}>
-            «Новинки» (товари з бейджем НОВЕ) та «Акції» — закріплені пункти меню.
-            Їх можна сховати з навігації, не видаляючи: вимкнення лише прибирає кнопку, сутність лишається.
+            «Популярне» (бейдж ХІТ), «Новинки» (бейдж НОВЕ) та «Акції» — закріплені пункти.
+            Вимкнення прибирає пункт і з меню, і з вкладок блоку «Популярне» на сайті; самі товари лишаються.
           </p>
           <div className={s.tableWrap}>
             <table className={s.table}>
@@ -137,6 +144,35 @@ export default function CategoriesPage() {
                     <td style={{ textAlign: "right" }}>
                       <button className={`${s.pill} ${sp.showInNav ? s.pillOn : s.pillOff}`} style={{ cursor: "pointer", border: "none" }}
                         onClick={() => toggleSpecial(sp.id, !sp.showInNav)}>{sp.showInNav ? "Так" : "Ні"}</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Блоки головної: вимкнений блок узагалі не показується на сайті */}
+      <div className={s.card}>
+        <div className={s.cardHead}><div className={s.cardTitle}>Блоки сайту</div></div>
+        <div style={{ padding: "8px 0" }}>
+          <p className={s.hint} style={{ padding: "0 22px 8px" }}>
+            Вимкнений блок зникає з головної сторінки повністю (дані лишаються в адмінці).
+          </p>
+          <div className={s.tableWrap}>
+            <table className={s.table}>
+              <thead><tr><th>Блок</th><th style={{ textAlign: "right" }}>На сайті</th></tr></thead>
+              <tbody>
+                {sections.map((sec) => (
+                  <tr key={sec.id}>
+                    <td>
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600 }}>{sec.label}</div>
+                      {sec.hint && <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 3 }}>{sec.hint}</div>}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <button className={`${s.pill} ${sec.visible ? s.pillOn : s.pillOff}`} style={{ cursor: "pointer", border: "none" }}
+                        onClick={() => toggleSection(sec.id, !sec.visible)}>{sec.visible ? "Так" : "Ні"}</button>
                     </td>
                   </tr>
                 ))}
@@ -158,6 +194,9 @@ export default function CategoriesPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className={s.field}><span className={s.fieldLabel}>Назва</span>
               <input className={s.input} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value, slug: slugify(e.target.value) })} /></div>
+            <div className={s.field}><span className={s.fieldLabel}>Назва (рос)</span>
+              <input className={s.input} value={edit.nameRu} placeholder="Порожньо — покажемо українську"
+                onChange={(e) => setEdit({ ...edit, nameRu: e.target.value })} /></div>
             <div className={s.field}><span className={s.fieldLabel}>Slug (авто з назви)</span>
               <input className={s.input} value={edit.slug} disabled readOnly style={{ opacity: 0.6 }} /></div>
             <div className={s.field}><span className={s.fieldLabel}>Порядок</span>

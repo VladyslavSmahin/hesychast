@@ -4,6 +4,7 @@ import type { NavCategory } from "@/lib/types";
 // Самі пункти фіксовані (як сутності не зникають), у БД (settings, key='nav_specials')
 // зберігається лише їх видимість у навігації.
 export const NAV_SPECIALS: NavCategory[] = [
+  { id: "hity", label: "Популярне", filter: { badge: "ХІТ" } },
   { id: "novynky", label: "Новинки", filter: { badge: "НОВЕ" } },
   { id: "aktsii", label: "Акції", scrollTo: "hero" },
 ];

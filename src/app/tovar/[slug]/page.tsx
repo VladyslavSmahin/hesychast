@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { LOCALE_COOKIE } from "@/lib/i18n";
+import { PreorderTag, PreorderNote } from "@/components/PreorderTag";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CatalogShell from "@/components/catalog/CatalogShell";
 import ProductGridCard from "@/components/catalog/ProductGridCard";
 import AddToCartButton from "@/components/catalog/AddToCartButton";
+import { ProductOptionsProvider } from "@/components/ProductOptionsContext";
+import StickerPreview from "@/components/StickerPreview";
 import { PhotoSlot } from "@/components/icons";
 import JsonLd from "@/components/JsonLd";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
-import { fetchProductBySlug, fetchRelatedProducts, fetchAllSlugs } from "@/features/catalog.server";
+import { fetchProductBySlug, fetchRelatedProducts, fetchAllSlugs, fetchStickers } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -32,7 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { product, category } = found;
   const description =
     product.desc?.trim() ||
-    `${product.name}${category ? ` — ${category.name.toLowerCase()}` : ""} у православній крамниці ІСИХАСТ. Ціна ${product.price} грн.`;
+    `${product.name}${category ? ` — ${category.name.toLowerCase()}` : ""} у православній крамниці ІСІХАСТ. Ціна ${product.price} грн.`;
 
   return {
     // бренд додає template з layout — тут лише назва товару
@@ -41,7 +46,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/tovar/${product.slug}` },
     openGraph: {
       type: "website",
-      title: `${product.name} — ІСИХАСТ`,
+      title: `${product.name} — ІСІХАСТ`,
       description,
       url: `/tovar/${product.slug}`,
       images: product.photo ? [{ url: product.photo, alt: product.name }] : undefined,
@@ -56,6 +61,14 @@ export default async function ProductPage({ params }: Params) {
 
   const { product, category } = found;
   const related = await fetchRelatedProducts(product.category, product.id);
+  // мова сторінки — з cookie (перемикач у шапці)
+  const isRu = (await cookies()).get(LOCALE_COOKIE)?.value === "ru";
+  const name = (isRu && product.nameRu) || product.name;
+  const desc = (isRu && product.descRu) || product.desc;
+  const weight = (isRu && product.weightRu) || product.weight;
+  const catName = category ? ((isRu && category.nameRu) || category.name) : "";
+  // наклейки потрібні лише для одягу; сторінка товару рендериться без PublicDataProvider
+  const stickers = product.stickerOption ? await fetchStickers() : [];
 
   const crumbLink: React.CSSProperties = { color: "var(--text-secondary)", textDecoration: "none" };
 
@@ -76,18 +89,19 @@ export default async function ProductPage({ params }: Params) {
           {category && (
             <>
               {" · "}
-              <Link href={`/katalog/${category.slug}`} style={crumbLink}>{category.name}</Link>
+              <Link href={`/katalog/${category.slug}`} style={crumbLink}>{catName}</Link>
             </>
           )}
           {" · "}
-          <span style={{ color: "var(--text-primary)" }}>{product.name}</span>
+          <span style={{ color: "var(--text-primary)" }}>{name}</span>
         </nav>
       }
     >
+      <ProductOptionsProvider product={product} stickers={stickers}>
       <article style={{ display: "grid", gridTemplateColumns: "var(--modal-cols)", gap: 32, alignItems: "start" }}>
         {/* фото — квадрат, як у модалці */}
-        <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", aspectRatio: "1 / 1" }}>
-          <PhotoSlot h="100%" photo={product.photo} alt={product.name} priority sizes="(max-width: 900px) 100vw, 560px" />
+        <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", aspectRatio: "1 / 1", minWidth: 0 }}>
+          <PhotoSlot h="100%" photo={product.photo} alt={name} priority sizes="(max-width: 900px) 100vw, 560px" soon={product.price <= 0} />
           {product.badge && (
             <div
               style={{
@@ -99,17 +113,23 @@ export default async function ProductPage({ params }: Params) {
               {product.badge}
             </div>
           )}
+          {product.availability === "preorder" && (
+            <div style={{ position: "absolute", top: 16, right: 16 }}>
+              <PreorderTag size="md" />
+            </div>
+          )}
         </div>
+        <StickerPreview />
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 700, lineHeight: 1.1, marginBottom: 12 }}>
-            {product.name}
+            {name}
           </h1>
 
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 22 }}>
-            {product.weight && (
+            {weight && (
               <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)" }}>
-                {product.weight}
+                {weight}
               </span>
             )}
             <span style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: product.oldPrice ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, whiteSpace: "nowrap" }}>
@@ -122,25 +142,27 @@ export default async function ProductPage({ params }: Params) {
             </span>
           </div>
 
-          {product.desc && (
+          {desc && (
             <p style={{ fontSize: 15, fontWeight: 300, lineHeight: 1.7, opacity: 0.92, marginBottom: 24 }}>
-              {product.desc}
+              {desc}
             </p>
           )}
 
           <div style={{ marginTop: "auto", paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-            <AddToCartButton product={product} />
+            {product.availability === "preorder" && <PreorderNote />}
+            <AddToCartButton />
             <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 12 }}>
-              Оплата при отриманні. Доставка Новою Поштою або самовивіз.
+              {isRu ? "Оплата при получении. Доставка Новой Почтой." : "Оплата при отриманні. Доставка Новою Поштою."}
             </p>
           </div>
         </div>
       </article>
+      </ProductOptionsProvider>
 
       {related.length > 0 && (
         <section style={{ marginTop: 64 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "var(--h2-size)", fontWeight: 700, marginBottom: 22 }}>
-            Схожі товари
+            {isRu ? "Похожие товары" : "Схожі товари"}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(var(--menu-cols, 4), minmax(0, 1fr))", gap: 18 }}>
             {related.map((p) => (

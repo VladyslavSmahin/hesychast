@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useDbReviews, dbSetReviewStatus, dbDeleteReview, type DbReview, type ReviewStatus } from "@/features/admin/db";
 import { useAdminAuth } from "@/features/admin/AdminAuthContext";
+import { DeleteButton } from "@/components/admin/IconButtons";
 import s from "@/components/admin/admin.module.css";
 
 const FILTERS: { value: ReviewStatus | "all"; label: string }[] = [
@@ -59,7 +60,7 @@ export default function ReviewsPage() {
               <div className={s.rowActions}>
                 {r.status !== "approved" && <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => setStatus(r.id, "approved")}>Схвалити</button>}
                 {r.status !== "rejected" && <button className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} onClick={() => setStatus(r.id, "rejected")}>Відхилити</button>}
-                {isAdmin && <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => remove(r.id)}>Видалити</button>}
+                {isAdmin && <DeleteButton onClick={() => remove(r.id)} />}
               </div>
             </div>
             <div style={{ padding: "0 22px 18px" }}>

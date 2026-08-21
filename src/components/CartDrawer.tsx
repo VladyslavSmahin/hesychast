@@ -6,6 +6,8 @@ import { Icon } from "./icons";
 import { useCart } from "@/features/cart/CartContext";
 import NovaPoshtaPicker from "./NovaPoshtaPicker";
 import { usePublicCatalog, useGloss } from "@/features/publicData";
+import { hasOptions } from "./ProductOptions";
+import { useT } from "@/features/locale/LocaleContext";
 import type { Product, CartItem } from "@/lib/types";
 
 const EXTRAS_CATEGORY = "додатково";
@@ -41,11 +43,21 @@ function isPhoneValid(raw: string): boolean {
   return d.length === 10 && d.startsWith("0");
 }
 
+/** Вибрані опції позиції одним рядком для кошика. */
+function optionsLine(item: CartItem): string {
+  const o = item.options;
+  if (!o) return "";
+  const parts = [o.size, o.color].filter(Boolean) as string[];
+  if (o.sticker) parts.push(`наклейка «${o.sticker}»`);
+  return parts.join(" · ");
+}
+
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, total, changeQty, remove, clear, add } = useCart();
+  const t = useT();
   const catalog = usePublicCatalog();
   const extras = useMemo(
-    () => catalog.filter((p) => p.category === EXTRAS_CATEGORY).sort((a, b) => a.price - b.price),
+    () => catalog.filter((p) => p.category === EXTRAS_CATEGORY && !hasOptions(p)).sort((a, b) => a.price - b.price),
     [catalog]
   );
   const [step, setStep] = useState<Step>("cart");
@@ -120,7 +132,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
         style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "min(440px, 100%)", background: "var(--bg-card)", borderLeft: "1px solid var(--border)", zIndex: 950, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "28px 28px 22px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: "var(--text-primary)", letterSpacing: 1 }}>
-            {step === "checkout" ? "Оформлення" : step === "done" ? "Готово" : "Кошик"}
+            {step === "checkout" ? t("cart.checkoutTitle") : step === "done" ? t("cart.done") : t("cart.title")}
           </h3>
           <button onClick={onClose} aria-label="Закрити"
             style={{ width: 36, height: 36, background: "transparent", border: "1px solid var(--border-light)", color: "var(--text-primary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -130,18 +142,18 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
         {step === "done" ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 32px", textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: "var(--accent)", marginBottom: 14 }}>Дякуємо!</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: "var(--accent)", marginBottom: 14 }}>{t("cart.thanks")}</div>
             <p style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.7, maxWidth: 280 }}>
-              Замовлення прийнято. Найближчим часом ми зв&apos;яжемося з вами для підтвердження.
+              {t("cart.thanksText")}
             </p>
-            <button className="btn-primary" style={{ marginTop: 28 }} onClick={onClose}>Чудово</button>
+            <button className="btn-primary" style={{ marginTop: 28 }} onClick={onClose}>{t("cart.ok")}</button>
           </div>
         ) : items.length === 0 ? (
           <div style={{ flex: 1, overflowY: "auto", padding: "8px 28px", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", padding: "48px 0 24px" }}>
               <div style={{ marginBottom: 16, opacity: 0.4 }}><Icon.Cart width="48" height="48" /></div>
-              <p style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 18 }}>Кошик порожній</p>
-              <p style={{ fontSize: 11, marginTop: 8, letterSpacing: 1 }}>Оберіть страви з меню</p>
+              <p style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 18 }}>{t("cart.empty")}</p>
+              <p style={{ fontSize: 11, marginTop: 8, letterSpacing: 1 }}>{t("cart.emptyHint")}</p>
             </div>
             <ExtrasBlock extras={extras} items={items} add={add} />
           </div>
@@ -153,12 +165,15 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <div style={{ flex: 1, paddingRight: 16 }}>
                       <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.2 }}>{item.name}</div>
+                      {optionsLine(item) && (
+                        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, lineHeight: 1.4 }}>{optionsLine(item)}</div>
+                      )}
                       <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 6, letterSpacing: 1 }}>
                         {item.oldPrice && <span style={{ textDecoration: "line-through", marginRight: 5 }}>{item.oldPrice}</span>}
                         <span style={{ color: item.oldPrice ? "var(--accent)" : "var(--text-secondary)" }}>{item.price} грн</span>
                       </div>
                     </div>
-                    <button onClick={() => remove(item.id)} aria-label="Видалити"
+                    <button onClick={() => remove(item.id)} aria-label={t("cart.remove")}
                       style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: 4 }}>
                       <Icon.Trash width="16" height="16" />
                     </button>
@@ -177,17 +192,17 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             </div>
             <div style={{ borderTop: "1px solid var(--border)", padding: "22px 28px 28px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-                <span style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)" }}>Разом</span>
+                <span style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)" }}>{t("cart.total")}</span>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: "var(--text-primary)" }}>{total} грн</span>
               </div>
-              <button className="btn-primary" style={{ width: "100%" }} onClick={() => setStep("checkout")}>Оформити замовлення</button>
+              <button className="btn-primary" style={{ width: "100%" }} onClick={() => setStep("checkout")}>{t("cart.checkout")}</button>
             </div>
           </>
         ) : (
           <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <span className="eyebrow" style={{ display: "block", marginBottom: 8, fontSize: 10 }}>Спосіб доставки</span>
+                <span className="eyebrow" style={{ display: "block", marginBottom: 8, fontSize: 10 }}>{t("cart.delivery")}</span>
                 <div style={{ display: "flex", gap: 8 }}>
                   {CARRIERS.map(({ value, label }) => (
                     <button key={value} type="button" onClick={() => setDelivery(value)}
@@ -201,7 +216,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 </div>
               </div>
 
-              <input className="form-input" placeholder="Ім'я *" value={name} onChange={(e) => setName(e.target.value)} />
+              <input className="form-input" placeholder={t("cart.name")} value={name} onChange={(e) => setName(e.target.value)} />
               <input className="form-input" type="tel" inputMode="numeric" autoComplete="tel"
                 placeholder="093 728 42 98" value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))} />
@@ -219,7 +234,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                   value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="off" />
               )}
 
-              <textarea className="form-input" placeholder="Коментар до замовлення" value={comment} onChange={(e) => setComment(e.target.value)} style={{ minHeight: 80 }} />
+              <textarea className="form-input" placeholder={t("cart.comment")} value={comment} onChange={(e) => setComment(e.target.value)} style={{ minHeight: 80 }} />
             </div>
 
             <div style={{ borderTop: "1px solid var(--border)", padding: "20px 28px 28px" }}>
@@ -247,7 +262,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
               <div style={{ display: "flex", gap: 10 }}>
                 <button type="button" className="btn-secondary" style={{ flex: "0 0 auto" }} onClick={() => setStep("cart")} disabled={submitting}>Назад</button>
                 <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={!canSubmit || submitting}>
-                  {submitting ? "Надсилаємо…" : "Підтвердити"}
+                  {submitting ? t("cart.sending") : t("cart.submit")}
                 </button>
               </div>
             </div>
@@ -262,7 +277,7 @@ function ExtrasBlock({ extras, items, add }: { extras: Product[]; items: CartIte
   const [open, setOpen] = useState(false);
   const title = useGloss("cart_extras");
   if (!extras.length) return null;
-  const qtyOf = (id: string) => items.find((i) => i.id === id)?.qty ?? 0;
+  const qtyOf = (id: string) => items.filter((i) => (i.productId ?? i.id) === id).reduce((n, i) => n + i.qty, 0);
   const inCart = extras.reduce((n, p) => n + qtyOf(p.id), 0);
   return (
     <div style={{ borderTop: "1px solid var(--border)", marginTop: 6, paddingTop: 16 }}>

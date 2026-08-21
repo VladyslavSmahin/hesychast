@@ -58,7 +58,7 @@ export default function LoginPage() {
     <div className={s.login}>
       <div className={s.loginCard}>
         <div style={{ fontFamily: "var(--font-church)", fontSize: 26, fontWeight: 700, letterSpacing: 3, color: "var(--text-primary)", marginTop: 8 }}>
-          ІСИХАСТ
+          ІСІХАСТ
         </div>
         <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 28 }}>
           Адмінпанель

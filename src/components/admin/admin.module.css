@@ -40,13 +40,40 @@
   color: var(--text-secondary);
 }
 
-.navGroupLabel {
+/* Група меню — розгортається/згортається кліком по заголовку */
+.navGroup { display: flex; flex-direction: column; }
+
+.navGroupBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 10px 8px;
+  background: transparent;
+  border: none;
+  font: inherit;
   font-size: 11px;
   letter-spacing: 2.5px;
   text-transform: uppercase;
   color: var(--text-tertiary);
-  padding: 16px 10px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s;
 }
+.navGroupBtn:hover { color: var(--text-secondary); }
+
+.navChevron { flex-shrink: 0; opacity: 0.65; transition: transform 0.2s ease; }
+.navChevronOpen { transform: rotate(180deg); }
+
+/* 0fr → 1fr дає плавне розгортання без фіксованої висоти */
+.navGroupBody {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+}
+.navGroupBodyOpen { grid-template-rows: 1fr; }
+.navGroupItems { overflow: hidden; display: flex; flex-direction: column; gap: 4px; }
 
 .navItem {
   display: flex;
@@ -174,6 +201,18 @@
 .btnDanger:hover { background: #2a1215; }
 .btnSmall { padding: 6px 11px; font-size: 11px; letter-spacing: 1px; }
 
+/* Іконкові дії рядка (олівець / кошик) */
+.iconBtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0;
+  border: 1px solid var(--border-light); border-radius: 6px;
+  background: transparent; color: var(--text-secondary);
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.iconBtn:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--accent); }
+.iconBtnDanger { border-color: #5c2b2b; color: #E0726A; }
+.iconBtnDanger:hover { background: #2a1215; color: #E0726A; border-color: #7a3a3a; }
+
 .pill {
   display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 12px;
   font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
@@ -182,6 +221,7 @@
 .pillEditor { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-light); }
 .pillOn { background: rgba(120,180,120,0.12); color: #8fc98f; border: 1px solid rgba(120,180,120,0.3); }
 .pillOff { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-light); }
+.pillPreorder { background: rgba(201,168,76,0.14); color: var(--gold); border: 1px solid rgba(201,168,76,0.35); }
 
 .cardMeta { display: none; } /* бейдж+ціна у верхньому рядку картки — лише на мобільному */
 

@@ -5,7 +5,7 @@ import { fetchPublicData } from "@/features/publicData.server";
 
 export const metadata: Metadata = {
   title: "Сторінку не знайдено",
-  description: "Такої сторінки немає. Поверніться на головну або оберіть категорію крамниці ІСИХАСТ.",
+  description: "Такої сторінки немає. Поверніться на головну або оберіть категорію крамниці ІСІХАСТ.",
   robots: { index: false, follow: true },
 };
 

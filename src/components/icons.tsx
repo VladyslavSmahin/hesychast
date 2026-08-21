@@ -83,6 +83,42 @@ export const Icon = {
       <path d="M8 13.9l8.5-6.8-6.5 8" />
     </svg>
   ),
+  // фірмові (залиті) логотипи — для кнопок соцмереж у брендових кольорах
+  TelegramBrand: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+      <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+    </svg>
+  ),
+  FacebookBrand: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+      <path d="M15.12 5.32H17V2.14A26.11 26.11 0 0 0 14.26 2C11.54 2 9.68 3.66 9.68 6.7v2.62H6.61v3.56h3.07V22h3.68v-9.12h3.06l.46-3.56h-3.52V7.05c0-1.05.28-1.73 1.76-1.73z" />
+    </svg>
+  ),
+  TikTokBrand: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+      <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 1 1 .76-5.06V9.7a5.65 5.65 0 0 0-.76-.05 5.7 5.7 0 1 0 5.7 5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.28 4.28 0 0 1-3.26-1.48z" />
+    </svg>
+  ),
+  InstagramBrand: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" {...p}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  Facebook: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" {...p}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M15.5 8h-1.6c-1 0-1.6.6-1.6 1.6V11H15l-.4 2.6h-2.3V21" />
+      <path d="M10 11h2.3" />
+    </svg>
+  ),
+  TikTok: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M14 3v11.2a3.6 3.6 0 1 1-3-3.55" />
+      <path d="M14 6.2c.7 1.6 2.2 2.7 4.2 2.8" />
+    </svg>
+  ),
 };
 
 /**
@@ -100,12 +136,18 @@ export function PhotoSlot({
   alt = "",
   priority = false,
   sizes = "(max-width: 640px) 50vw, (max-width: 1180px) 33vw, 300px",
+  soon = false,
+  soonLabel = "Скоро в продажу",
 }: {
   h?: number | string;
   photo?: string | null;
   alt?: string;
   priority?: boolean;
   sizes?: string;
+  /** товар ще без ціни — замість фото показуємо «Скоро в продажу» */
+  soon?: boolean;
+  /** підпис заглушки (мовою інтерфейсу) */
+  soonLabel?: string;
 }) {
   return (
     <div
@@ -136,6 +178,26 @@ export function PhotoSlot({
             pointerEvents: "none",
           }}
         />
+      )}
+
+      {soon && (
+        <div
+          style={{
+            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center", padding: 16,
+            background: photo ? "rgba(13,11,9,0.72)" : "transparent", backdropFilter: photo ? "blur(2px)" : undefined,
+          }}
+        >
+          <Icon.Cross width="26" height="26" style={{ color: "var(--accent)", opacity: 0.9 }} />
+          <span
+            style={{
+              fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, letterSpacing: 3,
+              textTransform: "uppercase", color: "var(--text-primary)",
+            }}
+          >
+            {soonLabel}
+          </span>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import {
   useDbBanners, dbUploadBanner, dbDeleteBanner, dbSetBannerActive, dbReorderBanners,
   type DbBanner,
 } from "@/features/admin/db";
+import { DeleteButton } from "@/components/admin/IconButtons";
 import s from "@/components/admin/admin.module.css";
 import { downscaleImage } from "@/lib/clientImage";
 
@@ -160,7 +161,7 @@ export default function BannersPanel() {
                   <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
                     <button style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }} onClick={() => move(i, -1)} disabled={i === 0} title="Вище" aria-label="Вище">↑</button>
                     <button style={{ ...arrowBtn, opacity: i === items.length - 1 ? 0.35 : 1 }} onClick={() => move(i, 1)} disabled={i === items.length - 1} title="Нижче" aria-label="Нижче">↓</button>
-                    <button className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => remove(b)}>Видалити</button>
+                    <DeleteButton onClick={() => remove(b)} />
                   </div>
                 </div>
               </div>

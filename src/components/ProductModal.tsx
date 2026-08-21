@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocalized } from "@/features/publicData";
+import { useT } from "@/features/locale/LocaleContext";
 import { Icon, PhotoSlot } from "./icons";
-import type { Product } from "@/lib/types";
+import { PreorderNote } from "./PreorderTag";
+import ProductOptions, { hasOptions, optionsReady } from "./ProductOptions";
+import { ProductOptionsProvider, useProductOptions } from "./ProductOptionsContext";
+import StickerPreview from "./StickerPreview";
+import type { CartOptions, Product } from "@/lib/types";
 
 export default function ProductModal({
   item,
@@ -11,7 +17,7 @@ export default function ProductModal({
 }: {
   item: Product | null;
   onClose: () => void;
-  onAdd: (item: Product) => void;
+  onAdd: (item: Product, priceOverride?: number, options?: CartOptions) => void;
 }) {
   useEffect(() => {
     if (!item) return;
@@ -25,6 +31,27 @@ export default function ProductModal({
   }, [item, onClose]);
 
   if (!item) return null;
+
+  return (
+    <ProductOptionsProvider product={item}>
+      <ModalBody item={item} onClose={onClose} onAdd={onAdd} />
+    </ProductOptionsProvider>
+  );
+}
+
+function ModalBody({
+  item,
+  onClose,
+  onAdd,
+}: {
+  item: Product;
+  onClose: () => void;
+  onAdd: (item: Product, priceOverride?: number, options?: CartOptions) => void;
+}) {
+  const { options } = useProductOptions();
+  const t = useT();
+  const { productName, productDesc, productWeight } = useLocalized();
+  const ready = optionsReady(item, options);
 
   return (
     <div
@@ -56,9 +83,10 @@ export default function ProductModal({
           <Icon.Close width="14" height="14" />
         </button>
 
-        {/* фото — квадрат: висота дорівнює ширині колонки */}
-        <div style={{ position: "relative", aspectRatio: "1 / 1", alignSelf: "start" }}>
-          <PhotoSlot h="100%" photo={item.photo} alt={item.name} sizes="(max-width: 900px) 100vw, 450px" />
+        {/* фото — квадрат: висота дорівнює ширині колонки; під ним — обрана наклейка */}
+        <div style={{ alignSelf: "start", minWidth: 0 }}>
+        <div style={{ position: "relative", aspectRatio: "1 / 1" }}>
+          <PhotoSlot h="100%" photo={item.photo} alt={productName(item)} sizes="(max-width: 900px) 100vw, 450px" soon={item.price <= 0} soonLabel={t("catalog.soon")} />
           {item.badge && (
             <div
               style={{
@@ -71,14 +99,16 @@ export default function ProductModal({
             </div>
           )}
         </div>
+        <div style={{ padding: "0 16px 16px" }}><StickerPreview /></div>
+        </div>
 
-        <div style={{ padding: "var(--modal-body-pt, 22px) 32px 28px", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "var(--modal-body-pt, 22px) 32px 28px", display: "flex", flexDirection: "column", minWidth: 0 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.1, marginTop: 12, marginBottom: 10 }}>
-            {item.name}
+            {productName(item)}
           </h2>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 18 }}>
             <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)" }}>
-              {item.weight}
+              {productWeight(item)}
             </span>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 700, color: item.oldPrice ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, whiteSpace: "nowrap" }}>
               {item.oldPrice && <span style={{ fontSize: 17, fontWeight: 400, color: "var(--text-secondary)", textDecoration: "line-through", marginRight: 8 }}>{item.oldPrice}</span>}
@@ -88,16 +118,29 @@ export default function ProductModal({
 
           {item.desc && (
             <div>
-              <div className="eyebrow" style={{ marginBottom: 8, fontSize: 11 }}>Опис</div>
+              <div className="eyebrow" style={{ marginBottom: 8, fontSize: 11 }}>{t("catalog.desc")}</div>
               <p style={{ fontSize: 15, fontWeight: 300, color: "var(--text-primary)", lineHeight: 1.6, opacity: 0.9 }}>
-                {item.desc}
+                {productDesc(item)}
               </p>
             </div>
           )}
 
           <div style={{ marginTop: "auto", paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-            <button className="btn-primary" style={{ width: "100%" }} onClick={() => { onAdd(item); onClose(); }}>
-              Додати в кошик
+            {item.availability === "preorder" && <PreorderNote />}
+            <ProductOptions />
+            <button
+              className="btn-primary"
+              style={{ width: "100%", opacity: ready ? 1 : 0.5, cursor: ready ? "pointer" : "not-allowed" }}
+              disabled={!ready || item.price <= 0}
+              onClick={() => { if (!ready || item.price <= 0) return; onAdd(item, undefined, hasOptions(item) ? options : undefined); onClose(); }}
+            >
+              {item.price <= 0
+                ? t("catalog.soon")
+                : !ready
+                  ? t("opt.chooseFirst")
+                  : options.sticker && item.stickerPrice
+                    ? `Додати в кошик — ${item.price + item.stickerPrice} грн`
+                    : t("cart.add")}
             </button>
           </div>
         </div>

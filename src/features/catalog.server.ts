@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { PUBLIC_TAG, PUBLIC_REVALIDATE } from "@/features/publicCache";
 import { mapProduct, PRODUCT_SELECT, type ProductRow } from "@/features/publicData.server";
-import type { Product } from "@/lib/types";
+import type { Product, Sticker } from "@/lib/types";
 
 // Серверні запити для окремих сторінок каталогу (/tovar/<slug>, /katalog/<slug>).
 // Головна тягне все одним махом через fetchPublicData; тут — точкові запити,
@@ -12,6 +12,8 @@ import type { Product } from "@/lib/types";
 export interface CategoryInfo {
   id: string;
   name: string;
+  /** назва російською; порожньо — показуємо українську */
+  nameRu?: string | null;
   slug: string;
 }
 
@@ -38,7 +40,7 @@ async function fetchProductBySlugUncached(
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, slug, name, description, price, weight, badge, image_path, category:categories(id, name, slug)")
+    .select("id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, category:categories(id, name, name_ru, slug)")
     .eq("slug", slug)
     .eq("is_available", true)
     .maybeSingle();
@@ -46,8 +48,12 @@ async function fetchProductBySlugUncached(
   if (error) console.error("product by slug:", error.message);
   if (!data) return null;
 
-  const rawCat = data.category as unknown as CategoryInfo | CategoryInfo[] | null;
-  const category = Array.isArray(rawCat) ? rawCat[0] ?? null : rawCat;
+  type CatRow = { id: string; name: string; name_ru: string | null; slug: string };
+  const rawCat = data.category as unknown as CatRow | CatRow[] | null;
+  const catRow = Array.isArray(rawCat) ? rawCat[0] ?? null : rawCat;
+  const category: CategoryInfo | null = catRow
+    ? { id: catRow.id, name: catRow.name, nameRu: catRow.name_ru, slug: catRow.slug }
+    : null;
 
   const product = mapProduct({
     ...(data as unknown as ProductRow),
@@ -77,7 +83,7 @@ async function fetchCategoryBySlugUncached(
 
   const { data: cat } = await supabase
     .from("categories")
-    .select("id, name, slug")
+    .select("id, name, name_ru, slug")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -93,7 +99,8 @@ async function fetchCategoryBySlugUncached(
   const products = ((rows ?? []) as unknown as ProductRow[]).map(mapProduct);
   await applyPromos(products);
 
-  return { category: cat as CategoryInfo, products };
+  const catInfo = cat as { id: string; name: string; name_ru: string | null; slug: string };
+  return { category: { id: catInfo.id, name: catInfo.name, nameRu: catInfo.name_ru, slug: catInfo.slug }, products };
 }
 
 /** Кілька товарів тієї ж категорії, крім поточного (блок «Схожі товари»). */
@@ -177,3 +184,16 @@ export const fetchCategoryBySlug = (slug: string) =>
 
 export const fetchRelatedProducts = (categorySlug: string, exceptId: string, limit = 4) =>
   unstable_cache(fetchRelatedProductsUncached, ["related", categorySlug, exceptId], cacheOpts)(categorySlug, exceptId, limit);
+
+/** Активні наклейки (сторінка товару рендериться без загального PublicDataProvider). */
+async function fetchStickersUncached(): Promise<Sticker[]> {
+  const { data } = await createAnonClient()
+    .from("stickers").select("id, name, image_path").eq("is_active", true).order("sort_order");
+  return ((data ?? []) as { id: string; name: string; image_path: string }[])
+    .map((s) => ({ id: s.id, name: s.name, image: s.image_path }));
+}
+
+export const fetchStickers = unstable_cache(fetchStickersUncached, ["stickers"], {
+  tags: [PUBLIC_TAG],
+  revalidate: PUBLIC_REVALIDATE,
+});

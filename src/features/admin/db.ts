@@ -6,22 +6,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { NAV_SPECIALS, parseNavVisibility } from "@/lib/navSpecials";
+import { SECTIONS, parseSections, type SectionVisibility } from "@/lib/sections";
 import { parseGlossary, type Glossary } from "@/lib/glossary";
-import type { Badge } from "@/lib/types";
+import type { Badge, Availability, ProductColor, Sticker, GalleryItem, VideoItem } from "@/lib/types";
 import { revalidatePublicAction } from "@/features/admin/actions/revalidatePublic";
 
 // ---------- Типи ----------
-export interface DbCategory { id: string; name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
+export interface DbCategory { id: string; name: string; nameRu: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
 export interface DbProduct {
   id: string; categoryId: string | null;
-  name: string; slug: string; price: number; weight: string; badge: Badge;
-  desc: string; photo: string | null;
-  isAvailable: boolean; sortOrder: number;
+  name: string; nameRu: string; slug: string; price: number; weight: string; weightRu: string; badge: Badge;
+  desc: string; descRu: string; photo: string | null;
+  availability: Availability; sortOrder: number;
+  // опції одягу
+  sizes: string[]; colors: ProductColor[];
+  stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
 }
 export interface ProductInput {
   categoryId: string | null;
-  name: string; price: number; weight: string; badge: Badge;
-  desc: string; photo: string | null; isAvailable: boolean;
+  name: string; nameRu: string; price: number; weight: string; weightRu: string; badge: Badge;
+  desc: string; descRu: string; photo: string | null; availability: Availability;
+  sizes: string[]; colors: ProductColor[];
+  stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
 }
 
 const slugify = (s: string) =>
@@ -31,23 +37,38 @@ const slugify = (s: string) =>
 // ---------- Рядки select ----------
 // Спрощена схема: товар = назва + ціна + опис + вага + бейдж + фото + категорія.
 interface ProductRow {
-  id: string; category_id: string | null; name: string; slug: string;
-  price: number | string; weight: string | null; badge: string | null;
-  description: string | null; image_path: string | null;
-  is_available: boolean; sort_order: number;
+  id: string; category_id: string | null; name: string; name_ru: string | null; slug: string;
+  price: number | string; weight: string | null; weight_ru: string | null; badge: string | null;
+  description: string | null; description_ru: string | null; image_path: string | null;
+  availability: Availability; sort_order: number;
+  sizes: string[] | null; colors: unknown;
+  sticker_option: boolean | null; sticker_price: number | string | null; size_chart_image: string | null;
+}
+
+/** Безпечний парс jsonb-кольорів. */
+function parseColors(v: unknown): ProductColor[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((c): c is { name?: unknown; hex?: unknown } => !!c && typeof c === "object")
+    .map((c) => ({ name: String(c.name ?? ""), hex: String(c.hex ?? "#000000") }))
+    .filter((c) => c.name);
 }
 
 function mapProduct(p: ProductRow): DbProduct {
   return {
     id: p.id, categoryId: p.category_id,
-    name: p.name, slug: p.slug, price: Number(p.price), weight: p.weight ?? "",
-    badge: (p.badge ?? "") as Badge, desc: p.description ?? "",
-    photo: p.image_path ?? null, isAvailable: p.is_available, sortOrder: p.sort_order,
+    name: p.name, nameRu: p.name_ru ?? "", slug: p.slug, price: Number(p.price),
+    weight: p.weight ?? "", weightRu: p.weight_ru ?? "",
+    badge: (p.badge ?? "") as Badge, desc: p.description ?? "", descRu: p.description_ru ?? "",
+    photo: p.image_path ?? null, availability: p.availability ?? "in_stock", sortOrder: p.sort_order,
+    sizes: p.sizes ?? [], colors: parseColors(p.colors),
+    stickerOption: Boolean(p.sticker_option), stickerPrice: Number(p.sticker_price ?? 0),
+    sizeChart: p.size_chart_image ?? null,
   };
 }
 
 const PRODUCT_SELECT =
-  "id, category_id, name, slug, price, weight, badge, description, image_path, is_available, sort_order";
+  "id, category_id, name, name_ru, slug, price, weight, weight_ru, badge, description, description_ru, image_path, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order";
 
 // ---------- Хуки читання ----------
 export function useDbProducts() {
@@ -69,9 +90,9 @@ export function useDbCategories() {
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const refetch = useCallback(async () => {
-    const { data, error } = await supabase.from("categories").select("id, name, slug, sort_order, show_in_nav, is_active").order("sort_order");
+    const { data, error } = await supabase.from("categories").select("id, name, name_ru, slug, sort_order, show_in_nav, is_active").order("sort_order");
     if (error) console.error("categories:", error.message);
-    else setCategories((data ?? []).map((c) => ({ id: c.id, name: c.name, slug: c.slug, sortOrder: c.sort_order, showInNav: c.show_in_nav, isActive: c.is_active })));
+    else setCategories((data ?? []).map((c) => ({ id: c.id, name: c.name, nameRu: c.name_ru ?? "", slug: c.slug, sortOrder: c.sort_order, showInNav: c.show_in_nav, isActive: c.is_active })));
     setLoading(false);
   }, [supabase]);
   useEffect(() => { refetch(); }, [refetch]);
@@ -82,9 +103,13 @@ export function useDbCategories() {
 function productFields(input: ProductInput) {
   return {
     category_id: input.categoryId,
-    name: input.name, description: input.desc || null,
-    price: input.price, weight: input.weight || null,
-    badge: input.badge || null, image_path: input.photo, is_available: input.isAvailable,
+    name: input.name, name_ru: input.nameRu || null,
+    description: input.desc || null, description_ru: input.descRu || null,
+    price: input.price, weight: input.weight || null, weight_ru: input.weightRu || null,
+    badge: input.badge || null, image_path: input.photo, availability: input.availability,
+    sizes: input.sizes, colors: input.colors,
+    sticker_option: input.stickerOption, sticker_price: input.stickerPrice,
+    size_chart_image: input.sizeChart,
   };
 }
 
@@ -105,9 +130,9 @@ export async function dbUpdateProduct(id: string, input: ProductInput): Promise<
   return error?.message;
 }
 
-/** Повертає текст помилки або undefined при успіху. */
-export async function dbSetAvailable(id: string, value: boolean) {
-  await createClient().from("products").update({ is_available: value }).eq("id", id);
+/** Змінює статус наявності товару (in_stock / preorder / out_of_stock). */
+export async function dbSetAvailability(id: string, value: Availability) {
+  await createClient().from("products").update({ availability: value }).eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 // Спрощена схема без «кошика» (soft-delete): видалення одразу фізичне.
@@ -115,18 +140,226 @@ export async function dbSoftDelete(id: string) {
   await createClient().from("products").delete().eq("id", id);
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
-// ---------- Категорії CRUD ----------
-export interface CategoryInput { name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
-export async function dbCreateCategory(input: CategoryInput): Promise<string | undefined> {
-  const { error } = await createClient().from("categories").insert({
-    name: input.name, slug: input.slug, sort_order: input.sortOrder, show_in_nav: input.showInNav, is_active: input.isActive,
+// ---------- Наклейки (бібліотека принтів для одягу) ----------
+export interface DbSticker extends Sticker { isActive: boolean; sortOrder: number }
+
+export function useDbStickers() {
+  const supabase = useMemo(() => createClient(), []);
+  const [stickers, setStickers] = useState<DbSticker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const refetch = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("stickers").select("id, name, image_path, is_active, sort_order").order("sort_order");
+    if (error) console.error("stickers:", error.message);
+    else setStickers((data ?? []).map((s) => ({
+      id: s.id, name: s.name, image: s.image_path, isActive: s.is_active, sortOrder: s.sort_order,
+    })));
+    setLoading(false);
+  }, [supabase]);
+  useEffect(() => { refetch(); }, [refetch]);
+  return { stickers, loading, refetch };
+}
+
+export async function dbCreateSticker(name: string, image: string): Promise<string | undefined> {
+  const { error } = await createClient().from("stickers").insert({ name, image_path: image, sort_order: 9999 });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+  return error?.message;
+}
+
+export async function dbUpdateSticker(id: string, patch: Partial<{ name: string; isActive: boolean }>) {
+  const row: Record<string, unknown> = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.isActive !== undefined) row.is_active = patch.isActive;
+  await createClient().from("stickers").update(row).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+export async function dbDeleteSticker(id: string) {
+  await createClient().from("stickers").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+// ---------- Галерея клієнтів (фото + відгуки) ----------
+export interface DbGalleryItem extends GalleryItem { isActive: boolean; sortOrder: number }
+
+export function useDbGallery() {
+  const supabase = useMemo(() => createClient(), []);
+  const [items, setItems] = useState<DbGalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const refetch = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("gallery_items").select("id, image_path, author_name, text, is_active, sort_order").order("sort_order");
+    if (error) console.error("gallery:", error.message);
+    else setItems((data ?? []).map((g) => ({
+      id: g.id, image: g.image_path, author: g.author_name ?? "", text: g.text ?? "",
+      isActive: g.is_active, sortOrder: g.sort_order,
+    })));
+    setLoading(false);
+  }, [supabase]);
+  useEffect(() => { refetch(); }, [refetch]);
+  return { items, loading, refetch };
+}
+
+export async function dbCreateGalleryItem(image: string): Promise<string | undefined> {
+  const { error } = await createClient().from("gallery_items").insert({ image_path: image, sort_order: 9999 });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+  return error?.message;
+}
+
+export async function dbUpdateGalleryItem(id: string, patch: Partial<{ author: string; text: string; isActive: boolean }>) {
+  const row: Record<string, unknown> = {};
+  if (patch.author !== undefined) row.author_name = patch.author || null;
+  if (patch.text !== undefined) row.text = patch.text || null;
+  if (patch.isActive !== undefined) row.is_active = patch.isActive;
+  await createClient().from("gallery_items").update(row).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+export async function dbDeleteGalleryItem(id: string) {
+  await createClient().from("gallery_items").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+// ---------- Відео клієнтів ----------
+export interface DbVideoItem extends VideoItem { isActive: boolean; sortOrder: number }
+
+export function useDbVideos() {
+  const supabase = useMemo(() => createClient(), []);
+  const [videos, setVideos] = useState<DbVideoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const refetch = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("video_items").select("id, video_path, poster_path, author_name, text, is_active, sort_order").order("sort_order");
+    if (error) console.error("videos:", error.message);
+    else setVideos((data ?? []).map((v) => ({
+      id: v.id, video: v.video_path, poster: v.poster_path, author: v.author_name ?? "", text: v.text ?? "",
+      isActive: v.is_active, sortOrder: v.sort_order,
+    })));
+    setLoading(false);
+  }, [supabase]);
+  useEffect(() => { refetch(); }, [refetch]);
+  return { videos, loading, refetch };
+}
+
+/**
+ * Завантажує відео напряму в Storage за підписаним посиланням (через сервер
+ * не можна — ліміт тіла запиту 4.5 МБ) і створює запис у video_items.
+ */
+export async function dbUploadVideo(file: File, poster: File | null): Promise<string | undefined> {
+  const signRes = await fetch("/api/video-upload", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contentType: file.type }),
+  });
+  const sign = await signRes.json().catch(() => ({}));
+  if (!signRes.ok || !sign.ok) return sign.error || `HTTP ${signRes.status}`;
+
+  const supabase = createClient();
+  const { error: upErr } = await supabase.storage.from("media").uploadToSignedUrl(sign.path, sign.token, file);
+  if (upErr) return upErr.message;
+
+  // постер (перший кадр) — звичайним шляхом через /api/upload
+  let posterUrl: string | null = null;
+  if (poster) {
+    const r = await dbUploadImage(poster, "products");
+    posterUrl = r.url ?? null;
+  }
+
+  const { error } = await supabase.from("video_items").insert({
+    video_path: sign.publicUrl, poster_path: posterUrl, sort_order: 9999,
   });
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
   return error?.message;
 }
-export async function dbUpdateCategory(id: string, patch: Partial<{ name: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean }>) {
+
+export async function dbUpdateVideo(id: string, patch: Partial<{ author: string; text: string; isActive: boolean }>) {
+  const row: Record<string, unknown> = {};
+  if (patch.author !== undefined) row.author_name = patch.author || null;
+  if (patch.text !== undefined) row.text = patch.text || null;
+  if (patch.isActive !== undefined) row.is_active = patch.isActive;
+  await createClient().from("video_items").update(row).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+export async function dbDeleteVideo(id: string) {
+  await createClient().from("video_items").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+// ---------- Telegram-канали (блок новин на сайті) ----------
+export interface DbTgChannel {
+  id: string; username: string;
+  /** ручний підпис (може бути порожній) */
+  title: string;
+  /** назва каналу з Telegram */
+  titleAuto: string;
+  isActive: boolean; sortOrder: number;
+  lastSyncAt: string | null; postCount: number;
+}
+
+export function useDbTgChannels() {
+  const supabase = useMemo(() => createClient(), []);
+  const [channels, setChannels] = useState<DbTgChannel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const refetch = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("tg_channels")
+      .select("id, username, title, title_auto, is_active, sort_order, last_sync_at, posts:tg_posts(count)")
+      .order("sort_order");
+    if (error) console.error("tg_channels:", error.message);
+    else setChannels((data ?? []).map((c) => ({
+      id: c.id, username: c.username, title: c.title ?? "", titleAuto: c.title_auto ?? "", isActive: c.is_active, sortOrder: c.sort_order,
+      lastSyncAt: c.last_sync_at,
+      postCount: (c.posts as { count: number }[] | null)?.[0]?.count ?? 0,
+    })));
+    setLoading(false);
+  }, [supabase]);
+  useEffect(() => { refetch(); }, [refetch]);
+  return { channels, loading, refetch };
+}
+
+export async function dbCreateTgChannel(username: string, title: string): Promise<string | undefined> {
+  const { error } = await createClient().from("tg_channels").insert({
+    username: username.replace(/^@/, "").trim(), title: title.trim() || null, sort_order: 9999,
+  });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+  return error?.message;
+}
+
+export async function dbUpdateTgChannel(id: string, patch: Partial<{ title: string; isActive: boolean }>) {
+  const row: Record<string, unknown> = {};
+  if (patch.title !== undefined) row.title = patch.title || null;
+  if (patch.isActive !== undefined) row.is_active = patch.isActive;
+  await createClient().from("tg_channels").update(row).eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+export async function dbDeleteTgChannel(id: string) {
+  await createClient().from("tg_channels").delete().eq("id", id);
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+/** Ручний запуск синхронізації новин (те саме, що робить крон кожні 5 годин). */
+export async function dbSyncTgNews(): Promise<{ ok: boolean; error?: string; channels?: { username: string; fetched: number; error?: string }[] }> {
+  const res = await fetch("/api/cron/tg-news");
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || !j.ok) return { ok: false, error: j.error || `HTTP ${res.status}` };
+  return { ok: true, channels: j.channels };
+}
+
+// ---------- Категорії CRUD ----------
+export interface CategoryInput { name: string; nameRu?: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean; }
+export async function dbCreateCategory(input: CategoryInput): Promise<string | undefined> {
+  const { error } = await createClient().from("categories").insert({
+    name: input.name, name_ru: input.nameRu || null, slug: input.slug,
+    sort_order: input.sortOrder, show_in_nav: input.showInNav, is_active: input.isActive,
+  });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+  return error?.message;
+}
+export async function dbUpdateCategory(id: string, patch: Partial<{ name: string; nameRu: string; slug: string; sortOrder: number; showInNav: boolean; isActive: boolean }>) {
   const row: Record<string, unknown> = {};
   if (patch.name !== undefined) row.name = patch.name;
+  if (patch.nameRu !== undefined) row.name_ru = patch.nameRu || null;
   if (patch.slug !== undefined) row.slug = patch.slug;
   if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
   if (patch.showInNav !== undefined) row.show_in_nav = patch.showInNav;
@@ -282,7 +515,17 @@ export const CARRIER_LABEL: Record<Carrier, string> = {
   ukrposhta: "Укрпошта",
   other: "Інше",
 };
-export interface DbOrderItem { name: string; price: number; quantity: number; }
+export interface DbOrderOptions { size?: string; color?: string; sticker?: string; stickerPrice?: number }
+export interface DbOrderItem { name: string; price: number; quantity: number; options?: DbOrderOptions | null }
+
+/** Вибрані опції позиції одним рядком («L · Чорний · наклейка «Хрест»»). */
+export function orderItemOptions(it: DbOrderItem): string {
+  const o = it.options;
+  if (!o) return "";
+  const parts = [o.size, o.color].filter(Boolean) as string[];
+  if (o.sticker) parts.push(`наклейка «${o.sticker}»`);
+  return parts.join(" · ");
+}
 export interface DbOrder {
   id: string; customerName: string; phone: string; deliveryType: Carrier;
   address: string | null; comment: string | null; status: OrderStatus;
@@ -298,7 +541,7 @@ export function useDbOrders() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, total, created_at, items:order_items(product_name, price, quantity)")
+      .select("id, customer_name, phone, delivery_type, address, comment, status, subtotal, total, created_at, items:order_items(product_name, price, quantity, options)")
       .order("created_at", { ascending: false });
     if (error) console.error("orders:", error.message);
     else setOrders((data ?? []).map((o) => ({
@@ -306,8 +549,8 @@ export function useDbOrders() {
       address: o.address, comment: o.comment, status: o.status as OrderStatus,
       subtotal: Number(o.subtotal), total: Number(o.total),
       createdAt: o.created_at,
-      items: ((o.items ?? []) as { product_name: string; price: number; quantity: number }[])
-        .map((it) => ({ name: it.product_name, price: Number(it.price), quantity: it.quantity })),
+      items: ((o.items ?? []) as { product_name: string; price: number; quantity: number; options: DbOrderOptions | null }[])
+        .map((it) => ({ name: it.product_name, price: Number(it.price), quantity: it.quantity, options: it.options })),
     })));
     setLoading(false);
   }, [supabase]);
@@ -380,6 +623,33 @@ export async function dbSetNavSpecialVisible(specials: NavSpecialItem[], id: str
   const map: Record<string, boolean> = {};
   for (const sp of specials) map[sp.id] = sp.id === id ? visible : sp.showInNav;
   await createClient().from("settings").upsert({ key: "nav_specials", value: map }, { onConflict: "key" });
+  await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
+}
+
+// ---------- Блоки сайту (settings, key='sections') ----------
+export interface SectionItem { id: string; label: string; hint?: string; visible: boolean }
+
+export function useDbSections() {
+  const supabase = useMemo(() => createClient(), []);
+  const [sections, setSections] = useState<SectionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("settings").select("value").eq("key", "sections").maybeSingle();
+    if (error) console.error("sections:", error.message);
+    const vis: SectionVisibility = parseSections(data?.value);
+    setSections(SECTIONS.map((s) => ({ id: s.id, label: s.label, hint: s.hint, visible: vis[s.id] })));
+    setLoading(false);
+  }, [supabase]);
+  useEffect(() => { refetch(); }, [refetch]);
+  return { sections, loading, refetch };
+}
+
+/** Вмикає/вимикає один блок головної (решта лишаються як були). */
+export async function dbSetSectionVisible(sections: SectionItem[], id: string, visible: boolean) {
+  const map: Record<string, boolean> = {};
+  for (const s of sections) map[s.id] = s.id === id ? visible : s.visible;
+  await createClient().from("settings").upsert({ key: "sections", value: map }, { onConflict: "key" });
   await revalidatePublicAction(); // зміна видна на вітрині — скидаємо її кеш
 }
 
