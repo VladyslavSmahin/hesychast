@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // тому беремо публічну веб-версію t.me/s/<канал> і розбираємо її розміткою.
 // Викликається кроном (/api/cron/tg-news) — на сайті показуємо вже збережене.
 
+const SYNC_EVERY_MS = 5 * 60 * 60 * 1000; // як часто освіжаємо стрічку (5 годин)
 const MAX_POSTS_PER_CHANNEL = 4;   // скільки останніх постів тримаємо з каналу
 const MAX_TEXT = 400;              // обрізаємо довгі пости для картки
 
@@ -147,4 +148,37 @@ export async function syncTgNews(): Promise<SyncResult> {
   }
 
   return result;
+}
+
+/**
+ * Ліниве оновлення: викликається після віддачі головної сторінки (next/after).
+ * Синхронізує новини лише якщо з останньої спроби минуло понад 5 годин —
+ * тому не залежить від крона (на тарифі Vercel Hobby він доступний раз на добу).
+ * Повертає true, якщо синхронізація відбулась.
+ */
+export async function maybeSyncTgNews(): Promise<boolean> {
+  const supabase = createAdminClient();
+
+  // найстаріша (або відсутня) синхронізація серед активних каналів
+  const { data: oldest } = await supabase
+    .from("tg_channels")
+    .select("id, last_sync_at")
+    .eq("is_active", true)
+    .order("last_sync_at", { ascending: true, nullsFirst: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!oldest) return false; // каналів немає — нічого робити
+
+  const last = oldest.last_sync_at ? new Date(oldest.last_sync_at).getTime() : 0;
+  if (Date.now() - last < SYNC_EVERY_MS) return false;
+
+  // одразу позначаємо спробу, щоб паралельні запити не запустили синк удруге
+  await supabase
+    .from("tg_channels")
+    .update({ last_sync_at: new Date().toISOString() })
+    .eq("is_active", true);
+
+  await syncTgNews();
+  return true;
 }
