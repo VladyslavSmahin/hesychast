@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import LocaleSwitch from "./LocaleSwitch";
+import ThemeSwitch from "./ThemeSwitch";
 import { useT } from "@/features/locale/LocaleContext";
 import Link from "next/link";
 import { Icon } from "./icons";
@@ -33,14 +34,14 @@ export default function MobileMenu({
       <div
         className="fade-in"
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 970 }}
+        style={{ position: "fixed", inset: 0, background: "var(--overlay)", zIndex: 970 }}
       />
       <aside
         className="slide-in-left"
         style={{
           position: "fixed", left: 0, top: 0, bottom: 0, width: "90vw", maxWidth: 460,
           background: "var(--bg-primary)", borderRight: "1px solid var(--border)",
-          boxShadow: "8px 0 40px rgba(0,0,0,0.5)", zIndex: 971,
+          boxShadow: "var(--shadow-lg)", zIndex: 971,
           display: "flex", flexDirection: "column",
         }}
       >
@@ -107,9 +108,15 @@ export default function MobileMenu({
           ))}
 
           {/* мова — тут теж, бо на вузьких екранах перемикач із шапки ховається */}
-          <div style={{ marginTop: 26 }}>
-            <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Мова</div>
-            <LocaleSwitch />
+          <div style={{ marginTop: 26, display: "flex", gap: 26, flexWrap: "wrap" }}>
+            <div>
+              <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Мова</div>
+              <LocaleSwitch />
+            </div>
+            <div>
+              <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Тема</div>
+              <ThemeSwitch />
+            </div>
           </div>
 
           <div style={{ marginTop: 26, display: "flex", flexDirection: "column", gap: 14 }}>

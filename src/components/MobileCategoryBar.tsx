@@ -35,9 +35,9 @@ export default function MobileCategoryBar({
     <div
       style={{
         position: "fixed", left: 10, right: 10, bottom: 10, zIndex: 90,
-        background: "rgba(20,17,14,0.92)", backdropFilter: "blur(14px)",
+        background: "var(--header-bg-scrolled)", backdropFilter: "blur(14px)",
         border: "1px solid var(--border-light)", borderRadius: 14,
-        boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+        boxShadow: "var(--shadow-md)",
       }}
     >
       <div
@@ -53,9 +53,9 @@ export default function MobileCategoryBar({
               style={{
                 flexShrink: 0, scrollSnapAlign: "start",
                 padding: "9px 16px", borderRadius: 10, cursor: "pointer", whiteSpace: "nowrap",
-                background: act ? "var(--accent)" : "var(--bg-elevated)",
+                background: "var(--bg-card)",
                 border: `1px solid ${act ? "var(--accent)" : "var(--border-light)"}`,
-                color: act ? "#0A0908" : "var(--text-primary)", fontFamily: "var(--font-body)",
+                color: act ? "var(--accent)" : "var(--text-primary)", fontFamily: "var(--font-body)",
                 fontSize: 13, fontWeight: act ? 600 : 500, letterSpacing: 0.5,
                 transition: "background 0.15s, color 0.15s",
               }}

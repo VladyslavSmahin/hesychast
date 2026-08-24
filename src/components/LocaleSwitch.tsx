@@ -24,7 +24,7 @@ export default function LocaleSwitch({ compact = false }: { compact?: boolean })
               fontSize: compact ? 11 : 12,
               letterSpacing: 1,
               background: active ? "var(--accent)" : "transparent",
-              color: active ? "#0A0908" : "var(--text-secondary)",
+              color: active ? "var(--on-accent)" : "var(--text-secondary)",
               border: "none",
               cursor: active ? "default" : "pointer",
               transition: "background 0.15s, color 0.15s",

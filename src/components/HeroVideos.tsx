@@ -75,7 +75,7 @@ export default function HeroVideos() {
             )}
 
             <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%)" }}>
-              <span style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(13,11,9,0.7)", border: "1px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--scrim)", border: "1px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z" /></svg>
               </span>
             </span>
@@ -99,7 +99,7 @@ export default function HeroVideos() {
       {playing && (
         <div
           onClick={() => setCurrent(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "var(--overlay-strong)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
           <video
             key={playing.id}
@@ -134,7 +134,7 @@ function SlideArrow({ dir, onClick }: { dir: "left" | "right"; onClick: () => vo
         position: "absolute", top: "50%", [dir]: -14, transform: "translateY(-50%)",
         width: 34, height: 34, borderRadius: "50%", zIndex: 2, cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(13,11,9,0.85)", border: "1px solid var(--border-light)", color: "var(--text-primary)",
+        background: "var(--scrim)", border: "1px solid var(--border-light)", color: "var(--text-primary)",
       }}
     >
       <Chevron dir={dir} />

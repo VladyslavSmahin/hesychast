@@ -53,7 +53,7 @@ export default function ReviewModal({ open, onClose }: { open: boolean; onClose:
       onClick={onClose}
       className="fade-in"
       style={{
-        position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)",
+        position: "fixed", inset: 0, zIndex: 1100, background: "var(--overlay-strong)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
       }}
     >

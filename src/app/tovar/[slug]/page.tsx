@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: Params) {
               style={{
                 position: "absolute", top: 16, left: 16, padding: "6px 12px",
                 background: product.badge === "НОВЕ" ? "var(--badge-new)" : "var(--accent)",
-                color: "#0A0908", fontSize: 11, fontWeight: 500, letterSpacing: 2.5, textTransform: "uppercase",
+                color: "var(--on-accent)", fontSize: 11, fontWeight: 500, letterSpacing: 2.5, textTransform: "uppercase",
               }}
             >
               {product.badge}

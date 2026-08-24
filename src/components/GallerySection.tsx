@@ -114,7 +114,7 @@ export default function GallerySection() {
       {lightbox && (
         <div
           onClick={() => setLightbox(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" }}
+          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "var(--overlay-strong)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" }}
         >
           <div style={{ position: "relative", width: "min(760px, 100%)", height: "min(88vh, 1000px)" }}>
             <Image src={lightbox} alt="Фото клієнта" fill sizes="760px" style={{ objectFit: "contain" }} />

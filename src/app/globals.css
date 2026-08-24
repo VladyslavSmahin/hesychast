@@ -1,18 +1,94 @@
+/* ============================================================
+   ТЕМИ ОФОРМЛЕННЯ
+   Кожна тема — це лише набір кольорових токенів. Компоненти
+   посилаються на змінні, тому перемикання не потребує JS-логіки
+   в самих компонентах: <html data-theme="light|dark">.
+   Тема-за-замовчуванням (без data-theme) — темна, як і раніше.
+   ============================================================ */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-primary: #0A0A0A;
+  --bg-card: #101010;
+  --bg-dark: #050505;
+  --bg-elevated: #191919;
+
+  /* акцент теми — червоний */
+  --accent: #E23A2E;
+  --accent-hover: #F04A3D;
+  --accent-active: #C42D22;
+  /* текст/іконки поверх акцентної заливки */
+  --on-accent: #FFFFFF;
+  /* «золото» і бейдж «НОВЕ» в темній темі теж акцентні */
+  --gold: #E23A2E;
+  --badge-new: #E23A2E;
+
+  --text-primary: #F4F2EE;
+  --text-secondary: #8E8A85;
+  --text-tertiary: #605C57;
+  --border: #1E1E1E;
+  --border-light: #2E2C2A;
+
+  /* шапка — напівпрозора, з блюром */
+  --header-bg: rgba(10,10,10,0.92);
+  --header-bg-scrolled: rgba(10,10,10,0.97);
+  /* підкладки під модалками та лайтбоксами */
+  --overlay: rgba(0,0,0,0.72);
+  --overlay-strong: rgba(0,0,0,0.9);
+  --shadow-md: 0 8px 30px rgba(0,0,0,0.5);
+  --shadow-lg: 0 16px 50px rgba(0,0,0,0.55);
+  /* фон під фото та заглушка «немає фото» */
+  --img-bg: #0A0A0A;
+  --img-placeholder: linear-gradient(135deg, #1A1A1A 0%, #0B0B0B 100%);
+  /* напівпрозора підкладка поверх фото (бейдж, «скоро в продажу») */
+  --scrim: rgba(10,10,10,0.75);
+  /* PNG-іконки намальовані темним — у темній темі інвертуємо */
+  --icon-invert: 0.95;
+  /* фон hero-секції та тепле світіння у правому верхньому куті */
+  --hero-grad: linear-gradient(135deg, #2A1512 0%, #1A0C0A 35%, #120A09 65%, #0A0A0A 100%);
+  --hero-glow: radial-gradient(ellipse at top right, rgba(226,58,46,0.28) 0%, rgba(150,40,32,0.12) 30%, transparent 60%);
+  --danger: #E0726A;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-primary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-dark: #FAF8F5;
+  --bg-elevated: #F4F1EB;
+
+  /* акцент теми — золото */
+  --accent: #AE8A4E;
+  --accent-hover: #C39B58;
+  --accent-active: #94743E;
+  --on-accent: #FFFFFF;
+  --gold: #AE8A4E;
+  --badge-new: #AE8A4E;
+
+  --text-primary: #16130F;
+  --text-secondary: #6C645A;
+  --text-tertiary: #9A9186;
+  --border: #E7E2D9;
+  --border-light: #DCD5C9;
+
+  --header-bg: rgba(255,255,255,0.92);
+  --header-bg-scrolled: rgba(255,255,255,0.97);
+  --overlay: rgba(28,24,19,0.55);
+  --overlay-strong: rgba(28,24,19,0.85);
+  --shadow-md: 0 8px 30px rgba(28,24,19,0.10);
+  --shadow-lg: 0 16px 50px rgba(28,24,19,0.14);
+  --img-bg: #F4F1EB;
+  --img-placeholder: linear-gradient(135deg, #F7F4EE 0%, #EBE6DC 100%);
+  --scrim: rgba(28,24,19,0.55);
+  --icon-invert: 0;
+  --hero-grad: linear-gradient(135deg, #F6EFE1 0%, #FBF7F0 35%, #FDFBF7 65%, #FFFFFF 100%);
+  --hero-glow: radial-gradient(ellipse at top right, rgba(174,138,78,0.22) 0%, rgba(174,138,78,0.08) 30%, transparent 60%);
+  --danger: #C0392B;
+}
+
 :root {
-  --bg-primary: #0D0B09;
-  --bg-card: #131110;
-  --bg-dark: #0E0C0A;
-  --bg-elevated: #1A1714;
-  --accent: #C0BEC8;
-  --accent-hover: #D0CED8;
-  --accent-active: #A8A6B0;
-  --text-primary: #F2EFE9;
-  --text-secondary: #9A938A;
-  --text-tertiary: #6A6258;
-  --border: #1C1A18;
-  --border-light: #2A2826;
-  --gold: #C9A84C;
-  --badge-new: #E8A547;
   /* шрифти підключені через next/font (layout.tsx) */
   --font-display: var(--font-cormorant), Georgia, serif;
   --font-body: var(--font-jost), system-ui, sans-serif;
@@ -54,12 +130,13 @@ body {
   margin: 0; padding: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
   font-family: var(--font-body);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-::selection { background: var(--accent); color: var(--bg-primary); }
+::selection { background: var(--accent); color: var(--on-accent); }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -74,19 +151,19 @@ h1 { font-family: var(--font-church); }
 .eyebrow { font-size: 11px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; color: var(--text-secondary); }
 
 .btn-primary {
-  background: var(--accent); color: #0A0908;
+  background: var(--accent); color: var(--on-accent);
   border: none; padding: 16px 36px;
   font-family: var(--font-body); font-size: 11px; font-weight: 500;
   letter-spacing: 3px; text-transform: uppercase;
   cursor: pointer; transition: all 0.25s ease;
 }
-.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 24px rgba(192,190,200,0.15); }
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 22%, transparent); }
 .btn-primary:active { background: var(--accent-active); }
 .btn-primary:disabled { background: var(--border-light); color: var(--text-secondary); cursor: not-allowed; }
 
 .btn-secondary {
   background: transparent; color: var(--text-primary);
-  border: 1px solid #444444; padding: 16px 36px;
+  border: 1px solid var(--border-light); padding: 16px 36px;
   font-family: var(--font-body); font-size: 11px; font-weight: 400;
   letter-spacing: 3px; text-transform: uppercase;
   cursor: pointer; transition: all 0.25s ease;
@@ -95,13 +172,13 @@ h1 { font-family: var(--font-church); }
 .btn-secondary:active { background: var(--bg-primary); border-color: var(--accent); }
 
 .btn-gold {
-  background: var(--gold); color: #1A1208;
+  background: var(--gold); color: var(--on-accent);
   border: none; padding: 14px 28px;
   font-family: var(--font-body); font-size: 10px; font-weight: 500;
   letter-spacing: 3px; text-transform: uppercase;
   cursor: pointer; transition: all 0.25s ease;
 }
-.btn-gold:hover { background: #D4B65E; }
+.btn-gold:hover { background: var(--accent-hover); }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 .fade-up { animation: fadeUp 0.5s ease both; }
@@ -136,7 +213,7 @@ h1 { font-family: var(--font-church); }
   background: var(--bg-card); border: 1px solid var(--border-light);
   color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
 }
-.chip:hover { color: var(--text-primary); border-color: #3A3833; }
+.chip:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
 .chip.active { background: var(--bg-elevated); border-color: var(--accent); color: var(--accent); }
 
 /* квадратний варіант чипа — для навігації по підкатегоріях (ролах) */

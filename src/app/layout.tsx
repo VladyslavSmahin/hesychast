@@ -5,7 +5,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { cookies } from "next/headers";
 import { CartProvider } from "@/features/cart/CartContext";
 import { LocaleProvider } from "@/features/locale/LocaleContext";
+import { ThemeProvider } from "@/features/theme/ThemeContext";
 import { LOCALE_COOKIE, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { THEME_COOKIE, THEME_INIT_SCRIPT, normalizeTheme, type Theme } from "@/lib/theme";
 import { SITE_URL, IS_PUBLIC_DOMAIN } from "@/lib/siteUrl";
 import "./globals.css";
 
@@ -59,16 +61,28 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // мову памʼятаємо в cookie — сервер віддає сторінку одразу потрібною
-  const cookieLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
+  // мову й тему памʼятаємо в cookie — сервер віддає сторінку одразу потрібною
+  const jar = await cookies();
+  const cookieLocale = jar.get(LOCALE_COOKIE)?.value;
   const locale: Locale = cookieLocale === "ru" ? "ru" : DEFAULT_LOCALE;
+  // Тему проставляємо ще на сервері, якщо відвідувач її вже обирав.
+  // Якщо ні — data-theme лишаємо порожнім: його до першого малювання
+  // виставить THEME_INIT_SCRIPT за часом доби (сервер локального часу не знає).
+  const savedTheme = jar.get(THEME_COOKIE)?.value;
+  const theme: Theme | undefined = savedTheme ? normalizeTheme(savedTheme) : undefined;
 
   return (
-    <html lang={locale} className={`${cormorant.variable} ${jost.variable} ${church.variable}`}>
+    <html lang={locale} data-theme={theme} suppressHydrationWarning className={`${cormorant.variable} ${jost.variable} ${church.variable}`}>
       <body>
-        <LocaleProvider initial={locale}>
-          <CartProvider>{children}</CartProvider>
-        </LocaleProvider>
+        {/* виконується синхронно до відмальовки контенту — інакше блимне
+            тема за замовчуванням (власний <head> тут ставити не можна:
+            Next сам збирає його з metadata і підключає стилі) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeProvider initial={theme}>
+          <LocaleProvider initial={locale}>
+            <CartProvider>{children}</CartProvider>
+          </LocaleProvider>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

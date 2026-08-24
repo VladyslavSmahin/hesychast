@@ -23,21 +23,21 @@ export default function Hero() {
       style={{
         position: "relative",
         padding: "var(--hero-pt) var(--page-pad) var(--py)",
-        background: "linear-gradient(135deg, #4A2E1A 0%, #2A1A10 35%, #1A130D 65%, #0D0B09 100%)",
+        background: "var(--hero-grad)",
         overflow: "hidden",
       }}
     >
       <div
         style={{
           position: "absolute", top: "-20%", right: "-10%", width: "70%", height: "120%",
-          background: "radial-gradient(ellipse at top right, rgba(180,120,70,0.45) 0%, rgba(120,70,40,0.18) 30%, transparent 60%)",
+          background: "var(--hero-glow)",
           pointerEvents: "none",
         }}
       />
       <div
         style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, transparent 0%, rgba(13,11,9,0.5) 100%)",
+          background: "linear-gradient(180deg, transparent 0%, var(--bg-primary) 100%)",
           pointerEvents: "none",
         }}
       />

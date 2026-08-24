@@ -127,7 +127,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   return (
     <>
       <div onClick={onClose} className="fade-in"
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 900 }} />
+        style={{ position: "fixed", inset: 0, background: "var(--overlay)", backdropFilter: "blur(4px)", zIndex: 900 }} />
       <aside className="slide-in"
         style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "min(440px, 100%)", background: "var(--bg-card)", borderLeft: "1px solid var(--border)", zIndex: 950, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "28px 28px 22px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -238,7 +238,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
             </div>
 
             <div style={{ borderTop: "1px solid var(--border)", padding: "20px 28px 28px" }}>
-              {error && <p style={{ fontSize: 11, color: "#E0726A", marginBottom: 14, lineHeight: 1.5 }}>{error}</p>}
+              {error && <p style={{ fontSize: 11, color: "var(--danger)", marginBottom: 14, lineHeight: 1.5 }}>{error}</p>}
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
                 <span style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "var(--text-secondary)" }}>До сплати</span>
@@ -300,7 +300,7 @@ function ExtrasBlock({ extras, items, add }: { extras: Product[]; items: CartIte
                 color: "var(--text-primary)",
               }}>
               {/* плюсик у кутку */}
-              <span style={{ position: "absolute", top: 6, right: 6, width: 18, height: 18, borderRadius: 5, background: "var(--accent)", color: "#0A0908", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, lineHeight: 1, fontWeight: 700 }}>+</span>
+              <span style={{ position: "absolute", top: 6, right: 6, width: 18, height: 18, borderRadius: 5, background: "var(--accent)", color: "var(--on-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, lineHeight: 1, fontWeight: 700 }}>+</span>
               {q > 0 && <span style={{ position: "absolute", top: 6, left: 8, fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>×{q}</span>}
               <span style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2, paddingRight: 20, marginTop: q > 0 ? 14 : 0 }}>{p.name}</span>
               <span style={{ fontSize: 10, color: "var(--text-secondary)", letterSpacing: 0.5 }}>

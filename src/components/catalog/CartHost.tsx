@@ -27,7 +27,7 @@ export default function CartHost() {
           <span
             style={{
               position: "absolute", top: -7, right: -7, minWidth: 19, height: 19, padding: "0 5px",
-              background: "var(--accent)", color: "#0A0908", borderRadius: 10,
+              background: "var(--accent)", color: "var(--on-accent)", borderRadius: 10,
               fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >

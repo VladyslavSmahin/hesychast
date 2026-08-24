@@ -84,8 +84,8 @@ export default function HeroPromoSlider() {
           key={b.id}
           style={{
             ...styleFor(offsetOf(i)),
-            border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "#0A0908",
-            boxShadow: offsetOf(i) === 0 ? "0 16px 50px rgba(0,0,0,0.55)" : "none",
+            border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--img-bg)",
+            boxShadow: offsetOf(i) === 0 ? "var(--shadow-lg)" : "none",
           }}
         >
           {/* перший банер — LCP головної, тому вантажимо його одразу (priority) */}
@@ -109,7 +109,7 @@ export default function HeroPromoSlider() {
             aria-label={`Банер ${i + 1}`}
             style={{
               width: 8, height: i === current ? 22 : 8, borderRadius: 4, padding: 0, cursor: "pointer",
-              border: "none", background: i === current ? "var(--accent)" : "rgba(255,255,255,0.45)", transition: "all 0.3s",
+              border: "none", background: i === current ? "var(--accent)" : "var(--border-light)", transition: "all 0.3s",
             }}
           />
         ))}

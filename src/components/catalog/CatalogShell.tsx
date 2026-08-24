@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandName from "@/components/BrandName";
 import CartHost from "./CartHost";
+import ThemeSwitch from "@/components/ThemeSwitch";
 import { Icon } from "@/components/icons";
 import { CONTACTS, TEXTS } from "@/data/site";
 
@@ -18,7 +19,7 @@ export default function CatalogShell({
       <header
         style={{
           position: "sticky", top: 0, zIndex: 10, height: "var(--header-h)",
-          borderBottom: "1px solid var(--border)", background: "rgba(13,11,9,0.92)", backdropFilter: "blur(12px)",
+          borderBottom: "1px solid var(--border)", background: "var(--header-bg)", backdropFilter: "blur(12px)",
           display: "flex", alignItems: "center",
         }}
       >
@@ -34,6 +35,7 @@ export default function CatalogShell({
             <Link href="/" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}>
               ← На головну
             </Link>
+            <ThemeSwitch compact />
             <CartHost />
           </div>
         </div>

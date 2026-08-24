@@ -49,7 +49,7 @@ export default function ProductOptions() {
                 style={{
                   minWidth: 46, padding: "9px 12px", cursor: "pointer",
                   background: value.size === s ? "var(--accent)" : "transparent",
-                  color: value.size === s ? "#0A0908" : "var(--text-primary)",
+                  color: value.size === s ? "var(--on-accent)" : "var(--text-primary)",
                   border: `1px solid ${value.size === s ? "var(--accent)" : "var(--border-light)"}`,
                   fontSize: 13, letterSpacing: 1, transition: "all 0.15s",
                 }}
@@ -136,7 +136,7 @@ export default function ProductOptions() {
       {chartOpen && product.sizeChart && (
         <div
           onClick={() => setChartOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" }}
+          style={{ position: "fixed", inset: 0, zIndex: 1200, background: "var(--overlay-strong)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" }}
         >
           <div style={{ position: "relative", width: "min(560px, 100%)", height: "min(84vh, 900px)", background: "#fff" }}>
             <Image src={product.sizeChart} alt={t("opt.sizeChart")} fill sizes="560px" style={{ objectFit: "contain" }} />
@@ -205,8 +205,8 @@ function SlideArrow({ dir, onClick }: { dir: "left" | "right"; onClick: () => vo
         position: "absolute", top: 30, [dir]: -6, width: 30, height: 30, zIndex: 2,
         display: "flex", alignItems: "center", justifyContent: "center",
         borderRadius: "50%", cursor: "pointer",
-        background: "rgba(13,11,9,0.88)", border: "1px solid var(--border-light)", color: "var(--text-primary)",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.45)",
+        background: "var(--scrim)", border: "1px solid var(--border-light)", color: "var(--text-primary)",
+        boxShadow: "var(--shadow-md)",
       }}
     >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"

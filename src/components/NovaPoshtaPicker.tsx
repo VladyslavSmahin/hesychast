@@ -12,7 +12,7 @@ interface Warehouse { ref: string; name: string }
 const listStyle: React.CSSProperties = {
   position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20,
   maxHeight: 220, overflowY: "auto", background: "var(--bg-card)",
-  border: "1px solid var(--border-light)", boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+  border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)",
 };
 const itemStyle: React.CSSProperties = {
   display: "block", width: "100%", textAlign: "left", padding: "10px 14px",

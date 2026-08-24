@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandName from "@/components/BrandName";
 import { Icon } from "@/components/icons";
+import ThemeSwitch from "@/components/ThemeSwitch";
 
 /** Простий каркас для інфо-сторінок (оферта, про нас тощо) у стилі сайту. */
 export default function InfoPageShell({ title, children }: { title: string; children: React.ReactNode }) {
@@ -9,7 +10,7 @@ export default function InfoPageShell({ title, children }: { title: string; chil
       <header
         style={{
           position: "sticky", top: 0, zIndex: 10, height: "var(--header-h)",
-          borderBottom: "1px solid var(--border)", background: "rgba(13,11,9,0.92)", backdropFilter: "blur(12px)",
+          borderBottom: "1px solid var(--border)", background: "var(--header-bg)", backdropFilter: "blur(12px)",
           display: "flex", alignItems: "center",
         }}
       >
@@ -21,9 +22,12 @@ export default function InfoPageShell({ title, children }: { title: string; chil
             <BrandName />
             <Icon.Cross width="15" height="15" style={{ color: "var(--accent)" }} />
           </Link>
-          <Link href="/" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}>
-            ← На головну
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <Link href="/" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)", textDecoration: "none" }}>
+              ← На головну
+            </Link>
+            <ThemeSwitch compact />
+          </div>
         </div>
       </header>
 

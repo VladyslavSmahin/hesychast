@@ -58,7 +58,7 @@ function ModalBody({
       onClick={onClose}
       className="fade-in"
       style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)",
+        position: "fixed", inset: 0, background: "var(--overlay-strong)", backdropFilter: "blur(6px)",
         zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
       }}
     >
@@ -75,7 +75,7 @@ function ModalBody({
           onClick={onClose}
           aria-label="Закрити"
           style={{
-            position: "absolute", top: 16, right: 16, width: 36, height: 36, background: "rgba(13,11,9,0.6)",
+            position: "absolute", top: 16, right: 16, width: 36, height: 36, background: "var(--scrim)",
             border: "1px solid var(--border-light)", color: "var(--text-primary)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2,
           }}
@@ -92,7 +92,7 @@ function ModalBody({
               style={{
                 position: "absolute", top: 20, left: 20, padding: "6px 12px",
                 background: item.badge === "НОВЕ" ? "var(--badge-new)" : "var(--accent)",
-                color: "#0A0908", fontSize: 11, fontWeight: 500, letterSpacing: 2.5, textTransform: "uppercase",
+                color: "var(--on-accent)", fontSize: 11, fontWeight: 500, letterSpacing: 2.5, textTransform: "uppercase",
               }}
             >
               {item.badge === "ХІТ" ? "ХІТ ПРОДАЖІВ" : item.badge}

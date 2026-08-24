@@ -154,7 +154,7 @@ export function PhotoSlot({
       style={{
         width: "100%",
         height: h,
-        background: photo ? "#0A0908" : "linear-gradient(135deg, #1A1714 0%, #0E0C0A 100%)",
+        background: photo ? "var(--img-bg)" : "var(--img-placeholder)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -185,7 +185,7 @@ export function PhotoSlot({
           style={{
             position: "absolute", inset: 0, display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center", padding: 16,
-            background: photo ? "rgba(13,11,9,0.72)" : "transparent", backdropFilter: photo ? "blur(2px)" : undefined,
+            background: photo ? "var(--scrim)" : "transparent", backdropFilter: photo ? "blur(2px)" : undefined,
           }}
         >
           <Icon.Cross width="26" height="26" style={{ color: "var(--accent)", opacity: 0.9 }} />
