@@ -23,6 +23,12 @@ export const Icon = {
       <circle cx="18" cy="20.5" r="1.1" />
     </svg>
   ),
+  User: (p: P) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7" />
+    </svg>
+  ),
   Close: (p: P) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" {...p}>
       <path d="M5 5l14 14M19 5L5 19" />

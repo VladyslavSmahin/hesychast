@@ -1,8 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Оновлює сесію (refresh токенів у cookies) і захищає /admin:
-// без сесії → редірект на /admin/login; із сесією на /admin/login → в /admin.
+// Оновлює сесію (refresh токенів у cookies) і захищає сторінки:
+//  /account — лише з сесією, інакше на /login;
+//  /admin   — лише staff (admin/editor); без сесії → /login, покупець → /account?denied=1;
+//  /login   — із сесією одразу туди, куди просили (?next) або в кабінет.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -24,33 +26,36 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+  const path = request.nextUrl.pathname;
 
-  // Роль із profiles (заповнюється з allowed_staff). Перевіряємо на сервері,
-  // а не лише на клієнті — інакше будь-який залогінений Google-акаунт бачив би /admin.
-  let isStaff = false;
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-    isStaff = profile?.role === "admin" || profile?.role === "editor";
+  const redirect = (pathname: string, params: Record<string, string> = {}) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = "";
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    return NextResponse.redirect(url);
+  };
+
+  if (path === "/login") {
+    if (!user) return response;
+    return redirect(safeNext(request.nextUrl.searchParams.get("next")));
   }
 
-  const path = request.nextUrl.pathname;
-  const isLogin = path === "/admin/login";
+  // старе посилання /admin/login веде на спільний вхід, а після нього — в адмінку
+  if (!user) return redirect("/login", { next: path === "/admin/login" ? "/admin" : path });
 
-  if (!isLogin) {
-    // немає сесії → на логін; є сесія, але не staff → відмова (без доступу до сторінок)
-    if (!user || !isStaff) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      if (user && !isStaff) url.searchParams.set("denied", "1");
-      return NextResponse.redirect(url);
-    }
-  } else if (isStaff) {
-    // staff на сторінці логіну → одразу в адмінку
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin";
-    url.search = "";
-    return NextResponse.redirect(url);
+  if (path.startsWith("/admin")) {
+    // Роль із profiles перевіряємо на сервері, а не лише на клієнті —
+    // інакше будь-який залогінений покупець бачив би /admin.
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const isStaff = profile?.role === "admin" || profile?.role === "editor";
+    if (!isStaff) return redirect("/account", { denied: "1" });
   }
 
   return response;
+}
+
+/** Лише внутрішній шлях — захист від open redirect через ?next=//evil.com. */
+export function safeNext(next: string | null): string {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
 }

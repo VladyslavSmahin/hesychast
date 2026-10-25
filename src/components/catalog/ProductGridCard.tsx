@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PhotoSlot } from "@/components/icons";
+import PhotoGallery from "@/components/PhotoGallery";
 import type { Product } from "@/lib/types";
 
 // Серверна картка товару для сіток на сторінках категорії та «схожі товари».
@@ -16,7 +16,7 @@ export default function ProductGridCard({ item }: { item: Product }) {
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: "var(--card-ar, 1 / 1)" }}>
-        <PhotoSlot h="100%" photo={item.photo} alt={item.name} />
+        <PhotoGallery h="100%" photos={item.photos} alt={item.name} />
       </div>
 
       <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.15, marginTop: 10, marginBottom: 8 }}>

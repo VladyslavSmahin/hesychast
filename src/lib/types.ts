@@ -56,8 +56,10 @@ export interface Product {
   badge: Badge;
   /** основна категорія (slug) */
   category: string;
-  /** шлях до фото або null (плейсхолдер) */
+  /** головне фото або null (плейсхолдер) */
   photo: string | null;
+  /** усі фото для галереї: головне першим, далі додаткові; порожньо — плейсхолдер */
+  photos: string[];
   /** наявність; на вітрину потрапляють лише in_stock та preorder */
   availability: Availability;
   /** доступні розміри одягу; порожньо — селектора немає */

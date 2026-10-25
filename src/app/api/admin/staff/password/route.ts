@@ -22,8 +22,8 @@ async function findUserByEmail(admin: ReturnType<typeof createAdminClient>, emai
 
 // POST /api/admin/staff/password — задає/скидає пароль співробітника (JSON { email, password }).
 // Якщо auth-користувача ще нема (заходив лише через Google або новий) — створює його.
-// Тільки для головного адміністратора. Email має бути в allowed_staff, інакше профіль
-// (а отже й доступ) не створиться — це гарантує тригер handle_new_user.
+// Тільки для головного адміністратора і лише для email з allowed_staff: покупці
+// задають пароль самі в кабінеті, а роль staff тригер handle_new_user бере зі списку.
 export async function POST(req: Request) {
   if (!(await isAdmin())) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // email має бути у білому списку — інакше пароль ні до чого (немає профілю → немає доступу)
+  // лише співробітники з білого списку — паролі покупцям адмінка не видає
   const { data: allowed } = await admin
     .from("allowed_staff")
     .select("email")

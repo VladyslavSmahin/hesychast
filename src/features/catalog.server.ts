@@ -40,7 +40,7 @@ async function fetchProductBySlugUncached(
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, category:categories(id, name, name_ru, slug)")
+    .select("id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, category:categories(id, name, name_ru, slug)")
     .eq("slug", slug)
     .eq("is_available", true)
     .maybeSingle();
@@ -176,11 +176,21 @@ export async function fetchAllSlugs(): Promise<{ products: SitemapEntry[]; categ
 // кожен товар і категорію; адмінка скидає їх усі одним тегом PUBLIC_TAG.
 const cacheOpts = { tags: [PUBLIC_TAG], revalidate: PUBLIC_REVALIDATE };
 
-export const fetchProductBySlug = (slug: string) =>
-  unstable_cache(fetchProductBySlugUncached, ["product-by-slug", slug], cacheOpts)(slug);
+// Кириличні slug-и («бальзам-07vc1») Next віддає в params закодованими (%D0%B1…),
+// а в БД вони звичайним текстом — без декодування сторінка давала 404.
+function decodeSlug(slug: string): string {
+  try { return decodeURIComponent(slug); } catch { return slug; }
+}
 
-export const fetchCategoryBySlug = (slug: string) =>
-  unstable_cache(fetchCategoryBySlugUncached, ["category-by-slug", slug], cacheOpts)(slug);
+export const fetchProductBySlug = (raw: string) => {
+  const slug = decodeSlug(raw);
+  return unstable_cache(fetchProductBySlugUncached, ["product-by-slug", slug], cacheOpts)(slug);
+};
+
+export const fetchCategoryBySlug = (raw: string) => {
+  const slug = decodeSlug(raw);
+  return unstable_cache(fetchCategoryBySlugUncached, ["category-by-slug", slug], cacheOpts)(slug);
+};
 
 export const fetchRelatedProducts = (categorySlug: string, exceptId: string, limit = 4) =>
   unstable_cache(fetchRelatedProductsUncached, ["related", categorySlug, exceptId], cacheOpts)(categorySlug, exceptId, limit);

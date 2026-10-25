@@ -37,14 +37,18 @@ const PALETTE: ProductColor[] = [
 interface Draft {
   categoryId: string;
   name: string; nameRu: string; price: number; weight: string; weightRu: string; badge: Badge;
-  desc: string; descRu: string; photo: string | null; availability: Availability;
+  desc: string; descRu: string;
+  /** усі фото: перше — головне (картка, пошук), далі додаткові */
+  photos: string[]; availability: Availability;
   sizes: string[]; colors: ProductColor[];
   stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
 }
 
+const MAX_PHOTOS = 10;
+
 const emptyDraft = (categoryId: string): Draft => ({
   categoryId, name: "", nameRu: "", price: 0, weight: "", weightRu: "", badge: "",
-  desc: "", descRu: "", photo: null, availability: "in_stock",
+  desc: "", descRu: "", photos: [], availability: "in_stock",
   sizes: [], colors: [], stickerOption: false, stickerPrice: 75, sizeChart: null,
 });
 
@@ -53,7 +57,7 @@ const toInput = (d: Draft): ProductInput => ({
   categoryId: d.categoryId || null,
   name: d.name.trim(), nameRu: d.nameRu.trim(), price: d.price,
   weight: d.weight, weightRu: d.weightRu, badge: d.badge,
-  desc: d.desc, descRu: d.descRu, photo: d.photo, availability: d.availability,
+  desc: d.desc, descRu: d.descRu, photo: d.photos[0] ?? null, images: d.photos.slice(1), availability: d.availability,
   sizes: d.sizes, colors: d.colors,
   stickerOption: d.stickerOption, stickerPrice: d.stickerPrice, sizeChart: d.sizeChart,
 });
@@ -103,7 +107,8 @@ export default function ProductsPage() {
     setDraft({
       categoryId: p.categoryId ?? "", name: p.name, nameRu: p.nameRu, price: p.price,
       weight: p.weight, weightRu: p.weightRu,
-      badge: p.badge, desc: p.desc, descRu: p.descRu, photo: p.photo, availability: p.availability,
+      badge: p.badge, desc: p.desc, descRu: p.descRu,
+      photos: [p.photo, ...p.images].filter((x): x is string => !!x), availability: p.availability,
       sizes: p.sizes, colors: p.colors,
       stickerOption: p.stickerOption, stickerPrice: p.stickerPrice, sizeChart: p.sizeChart,
     });
@@ -134,21 +139,38 @@ export default function ProductsPage() {
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
-  const handlePhotoFile = async (file?: File) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) { alert("Оберіть зображення."); return; }
+  // кілька файлів за раз: вантажимо по черзі й дописуємо в кінець списку
+  const handlePhotoFiles = async (list: FileList | null) => {
+    const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/"));
+    if (!files.length) return;
+    const room = MAX_PHOTOS - (draft?.photos.length ?? 0);
+    if (room <= 0) { alert(`Не більше ${MAX_PHOTOS} фото на товар.`); return; }
     setPhotoBusy(true);
-    const prepared = await downscaleImage(file, 1600, 0.82);
-    if (prepared.size > 4 * 1024 * 1024) {
-      setPhotoBusy(false);
-      alert("Фото завелике навіть після стиснення. Оберіть інше або менше за розміром.");
-      return;
+    const failed: string[] = [];
+    for (const file of files.slice(0, room)) {
+      const prepared = await downscaleImage(file, 1600, 0.82);
+      if (prepared.size > 4 * 1024 * 1024) { failed.push(`${file.name}: завелике навіть після стиснення`); continue; }
+      const r = await dbUploadImage(prepared, "products");
+      if (r.error || !r.url) { failed.push(`${file.name}: ${r.error ?? "помилка"}`); continue; }
+      const url = r.url;
+      setDraft((d) => (d ? { ...d, photos: [...d.photos, url] } : d));
     }
-    const r = await dbUploadImage(prepared, "products");
     setPhotoBusy(false);
-    if (r.error) { alert("Помилка завантаження: " + r.error); return; }
-    set("photo", r.url ?? null);
+    if (files.length > room) failed.push(`завантажено лише ${room} — ліміт ${MAX_PHOTOS} фото`);
+    if (failed.length) alert("Не всі фото завантажено:\n" + failed.join("\n"));
   };
+
+  const movePhoto = (i: number, dir: -1 | 1) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const j = i + dir;
+      if (j < 0 || j >= d.photos.length) return d;
+      const photos = [...d.photos];
+      [photos[i], photos[j]] = [photos[j], photos[i]];
+      return { ...d, photos };
+    });
+  const removePhoto = (i: number) =>
+    setDraft((d) => (d ? { ...d, photos: d.photos.filter((_, k) => k !== i) } : d));
 
   const handleChartFile = async (file?: File) => {
     if (!file) return;
@@ -270,23 +292,36 @@ export default function ProductsPage() {
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Field label="Фото товару">
-              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                <div style={{ width: 96, height: 96, flexShrink: 0, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-light)", background: draft.photo ? `#0A0908 url(${draft.photo}) center/cover no-repeat` : "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: 10 }}>
-                  {!draft.photo && "Немає"}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <label className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} style={{ cursor: photoBusy ? "wait" : "pointer", textAlign: "center", opacity: photoBusy ? 0.6 : 1 }}>
-                    {photoBusy ? "Завантаження…" : draft.photo ? "Замінити" : "Завантажити"}
-                    <input type="file" accept="image/*" hidden disabled={photoBusy} onChange={(e) => handlePhotoFile(e.target.files?.[0])} />
+            <Field label={`Фото товару (${draft.photos.length}/${MAX_PHOTOS})`}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
+                {draft.photos.map((url, i) => (
+                  <div key={url + i} style={{ width: 96, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ position: "relative", width: 96, height: 96, borderRadius: 8, overflow: "hidden", border: `1px solid ${i === 0 ? "var(--accent)" : "var(--border-light)"}`, background: `#0A0908 url(${url}) center/cover no-repeat` }}>
+                      {i === 0 && (
+                        <span style={{ position: "absolute", left: 4, top: 4, padding: "2px 6px", borderRadius: 4, background: "var(--accent)", color: "var(--on-accent)", fontSize: 9, letterSpacing: 1, textTransform: "uppercase" }}>Головне</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button type="button" className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} style={{ flex: 1, padding: "4px 0" }}
+                        disabled={i === 0} onClick={() => movePhoto(i, -1)} aria-label="Перемістити ліворуч">←</button>
+                      <button type="button" className={`${s.btn} ${s.btnGhost} ${s.btnSmall}`} style={{ flex: 1, padding: "4px 0" }}
+                        disabled={i === draft.photos.length - 1} onClick={() => movePhoto(i, 1)} aria-label="Перемістити праворуч">→</button>
+                      <button type="button" className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} style={{ flex: 1, padding: "4px 0" }}
+                        onClick={() => removePhoto(i)} aria-label="Прибрати фото">✕</button>
+                    </div>
+                  </div>
+                ))}
+                {draft.photos.length < MAX_PHOTOS && (
+                  <label style={{ width: 96, height: 96, borderRadius: 8, border: "1px dashed var(--border-light)", background: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 11, color: "var(--text-secondary)", cursor: photoBusy ? "wait" : "pointer", opacity: photoBusy ? 0.6 : 1, padding: 6 }}>
+                    {photoBusy ? "Завантаження…" : "+ Додати фото"}
+                    <input type="file" accept="image/*" multiple hidden disabled={photoBusy}
+                      onChange={(e) => { handlePhotoFiles(e.target.files); e.target.value = ""; }} />
                   </label>
-                  {draft.photo && (
-                    <button type="button" className={`${s.btn} ${s.btnDanger} ${s.btnSmall}`} onClick={() => set("photo", null)}>Прибрати</button>
-                  )}
-                </div>
+                )}
               </div>
               <p className={s.hint} style={{ fontSize: 11, marginTop: 8 }}>
-                Фото автоматично конвертується у WebP і зберігається у хмарному сховищі (R2). До 8 МБ.
+                Можна обрати кілька файлів одразу. Перше фото — головне (картка в каталозі, пошук, соцмережі);
+                стрілками змінюйте порядок. На сайті фото гортаються свайпом. Автоматично конвертуються у WebP.
               </p>
             </Field>
 

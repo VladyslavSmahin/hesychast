@@ -39,7 +39,7 @@ export function productSchema(product: Product, categoryName?: string) {
     "@type": "Product",
     name: product.name,
     ...(product.desc ? { description: product.desc } : {}),
-    ...(product.photo ? { image: product.photo } : {}),
+    ...(product.photos.length ? { image: product.photos } : {}),
     ...(categoryName ? { category: categoryName } : {}),
     ...(product.weight ? { weight: product.weight } : {}),
     sku: product.slug,

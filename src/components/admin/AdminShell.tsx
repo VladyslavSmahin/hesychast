@@ -9,28 +9,21 @@ import { useAdminAuth } from "@/features/admin/AdminAuthContext";
 import { refreshAdminAction } from "@/features/admin/actions/common";
 import s from "./admin.module.css";
 
+// «Огляд» і «Маркетинг» (акції, новини) поки сховані з меню — сторінки акцій і новин
+// лишились і відкриваються за прямим посиланням.
 const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   {
     group: "Каталог",
     items: [
-      { href: "/admin", label: "Огляд" },
       { href: "/admin/categories", label: "Категорії" },
       { href: "/admin/products", label: "Товари" },
       { href: "/admin/stickers", label: "Наклейки" },
     ],
   },
   {
-    group: "Маркетинг",
-    items: [
-      { href: "/admin/promos", label: "Акції" },
-      { href: "/admin/news", label: "Новини (Telegram)" },
-    ],
-  },
-  {
     group: "Замовлення",
     items: [
-      { href: "/admin/orders/board", label: "Дошка замовлень" },
-      { href: "/admin/orders", label: "Замовлення (список)" },
+      { href: "/admin/orders", label: "Замовлення" },
       { href: "/admin/reviews", label: "Відгуки" },
       { href: "/admin/gallery", label: "Галерея клієнтів" },
     ],
@@ -78,7 +71,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const toggleGroup = (group: string) =>
     setOpenGroups((prev) => (prev.includes(group) ? prev.filter((x) => x !== group) : [...prev, group]));
 
-  const signOut = async () => { await logout(); router.replace("/admin/login"); };
+  const signOut = async () => { await logout(); router.replace("/login"); };
 
   // сторінка логіну — без оболонки
   if (isLogin) return <>{children}</>;
@@ -118,7 +111,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     <div className={s.shell}>
       {navOpen && <div className={s.overlay} onClick={() => setNavOpen(false)} />}
       <aside className={`${s.sidebar} ${navOpen ? s.sidebarOpen : ""}`}>
-        <Link href="/admin" className={s.brand}>
+        <Link href="/" className={s.brand} title="Перейти на сайт">
           <div>
             <div className={s.brandText} style={{ fontFamily: "var(--font-church)", letterSpacing: 4 }}>ІСІХАСТ</div>
             <div className={s.brandSub}>Адмінпанель</div>

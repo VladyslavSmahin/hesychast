@@ -8,6 +8,8 @@ import NovaPoshtaPicker from "./NovaPoshtaPicker";
 import { usePublicCatalog, useGloss } from "@/features/publicData";
 import { hasOptions } from "./ProductOptions";
 import { useT } from "@/features/locale/LocaleContext";
+import { useAccount } from "@/features/account/AccountContext";
+import { formatPhone, isPhoneValid } from "@/lib/phone";
 import type { Product, CartItem } from "@/lib/types";
 
 const EXTRAS_CATEGORY = "додатково";
@@ -26,22 +28,6 @@ const CARRIERS: { value: Delivery; label: string; placeholder: string }[] = [
   { value: "ukrposhta",   label: "Укрпошта",   placeholder: "Місто, відділення або індекс *" },
   { value: "other",       label: "Інше",       placeholder: "Опишіть спосіб доставки *" },
 ];
-
-// Український номер: лише цифри, формат «093 728 42 98» (10 цифр, починається з 0).
-function phoneDigits(raw: string): string {
-  let d = raw.replace(/\D/g, "");
-  if (d.startsWith("380")) d = "0" + d.slice(3);   // +380XX… → 0XX…
-  else if (d.startsWith("80")) d = "0" + d.slice(2); // 80XX…  → 0XX…
-  return d.slice(0, 10);
-}
-function formatPhone(raw: string): string {
-  const d = phoneDigits(raw);
-  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join(" ");
-}
-function isPhoneValid(raw: string): boolean {
-  const d = phoneDigits(raw);
-  return d.length === 10 && d.startsWith("0");
-}
 
 /** Вибрані опції позиції одним рядком для кошика. */
 function optionsLine(item: CartItem): string {
@@ -76,6 +62,16 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // залогінений покупець: імʼя, телефон і адресу за замовчуванням беремо з профілю.
+  // Лише в порожні поля — введене руками не перетираємо.
+  const { account } = useAccount();
+  useEffect(() => {
+    if (step !== "checkout" || !account) return;
+    if (account.fullName) setName((v) => v || account.fullName);
+    if (account.phone) setPhone((v) => v || formatPhone(account.phone));
+    if (account.defaultAddress) setComment((v) => v || account.defaultAddress);
+  }, [step, account]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";

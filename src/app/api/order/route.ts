@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendTelegramMessage, esc } from "@/lib/telegram";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 interface IncomingItem {
@@ -112,6 +113,9 @@ export async function POST(req: Request) {
 
   const supabase = createAdminClient();
 
+  // залогінений покупець — замовлення потрапить у його кабінет (сесія з cookie, не з тіла запиту)
+  const { data: { user } } = await (await createSessionClient()).auth.getUser();
+
   // ---- Авторитетні ціни з БД (захист від підміни ціни на клієнті) ----
   const ids = [...new Set(items.map(productIdOf).filter((id) => UUID_RE.test(id)))];
   const fromDb = new Map<string, DbProductRow>();
@@ -207,6 +211,7 @@ export async function POST(req: Request) {
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
+        user_id: user?.id ?? null,
         customer_name: name.trim(),
         phone: phone.trim(),
         delivery_type: delivery,

@@ -4,7 +4,7 @@ import { Icon } from "@/components/icons";
 import ThemeSwitch from "@/components/ThemeSwitch";
 
 /** Простий каркас для інфо-сторінок (оферта, про нас тощо) у стилі сайту. */
-export default function InfoPageShell({ title, children }: { title: string; children: React.ReactNode }) {
+export default function InfoPageShell({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg-primary)", color: "var(--text-primary)" }}>
       <header
@@ -32,9 +32,11 @@ export default function InfoPageShell({ title, children }: { title: string; chil
       </header>
 
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px var(--page-pad) 80px" }}>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--h2-size)", fontWeight: 700, lineHeight: 1.1, marginBottom: 28 }}>
-          {title}
-        </h1>
+        {title && (
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "var(--h2-size)", fontWeight: 700, lineHeight: 1.1, marginBottom: 28 }}>
+            {title}
+          </h1>
+        )}
         <div style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-primary)", opacity: 0.92 }}>
           {children}
         </div>

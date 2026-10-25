@@ -17,6 +17,8 @@ export interface DbProduct {
   id: string; categoryId: string | null;
   name: string; nameRu: string; slug: string; price: number; weight: string; weightRu: string; badge: Badge;
   desc: string; descRu: string; photo: string | null;
+  /** додаткові фото після головного */
+  images: string[];
   availability: Availability; sortOrder: number;
   // опції одягу
   sizes: string[]; colors: ProductColor[];
@@ -25,7 +27,7 @@ export interface DbProduct {
 export interface ProductInput {
   categoryId: string | null;
   name: string; nameRu: string; price: number; weight: string; weightRu: string; badge: Badge;
-  desc: string; descRu: string; photo: string | null; availability: Availability;
+  desc: string; descRu: string; photo: string | null; images: string[]; availability: Availability;
   sizes: string[]; colors: ProductColor[];
   stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
 }
@@ -40,6 +42,7 @@ interface ProductRow {
   id: string; category_id: string | null; name: string; name_ru: string | null; slug: string;
   price: number | string; weight: string | null; weight_ru: string | null; badge: string | null;
   description: string | null; description_ru: string | null; image_path: string | null;
+  images: string[] | null;
   availability: Availability; sort_order: number;
   sizes: string[] | null; colors: unknown;
   sticker_option: boolean | null; sticker_price: number | string | null; size_chart_image: string | null;
@@ -60,7 +63,7 @@ function mapProduct(p: ProductRow): DbProduct {
     name: p.name, nameRu: p.name_ru ?? "", slug: p.slug, price: Number(p.price),
     weight: p.weight ?? "", weightRu: p.weight_ru ?? "",
     badge: (p.badge ?? "") as Badge, desc: p.description ?? "", descRu: p.description_ru ?? "",
-    photo: p.image_path ?? null, availability: p.availability ?? "in_stock", sortOrder: p.sort_order,
+    photo: p.image_path ?? null, images: p.images ?? [], availability: p.availability ?? "in_stock", sortOrder: p.sort_order,
     sizes: p.sizes ?? [], colors: parseColors(p.colors),
     stickerOption: Boolean(p.sticker_option), stickerPrice: Number(p.sticker_price ?? 0),
     sizeChart: p.size_chart_image ?? null,
@@ -68,7 +71,7 @@ function mapProduct(p: ProductRow): DbProduct {
 }
 
 const PRODUCT_SELECT =
-  "id, category_id, name, name_ru, slug, price, weight, weight_ru, badge, description, description_ru, image_path, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order";
+  "id, category_id, name, name_ru, slug, price, weight, weight_ru, badge, description, description_ru, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order";
 
 // ---------- Хуки читання ----------
 export function useDbProducts() {
@@ -106,7 +109,7 @@ function productFields(input: ProductInput) {
     name: input.name, name_ru: input.nameRu || null,
     description: input.desc || null, description_ru: input.descRu || null,
     price: input.price, weight: input.weight || null, weight_ru: input.weightRu || null,
-    badge: input.badge || null, image_path: input.photo, availability: input.availability,
+    badge: input.badge || null, image_path: input.photo, images: input.images, availability: input.availability,
     sizes: input.sizes, colors: input.colors,
     sticker_option: input.stickerOption, sticker_price: input.stickerPrice,
     size_chart_image: input.sizeChart,

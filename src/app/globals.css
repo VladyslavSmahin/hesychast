@@ -268,6 +268,14 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
+/* галерея фото товару: стрілки — у картках при наведенні, у модалці/на сторінці завжди;
+   на тач-пристроях їх немає (там свайп) */
+.photo-gallery__arrow { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.photo-gallery:hover .photo-gallery__arrow,
+.photo-gallery--arrows .photo-gallery__arrow { opacity: 1; pointer-events: auto; }
+.photo-gallery .no-scrollbar { cursor: grab; }
+@media (hover: none) { .photo-gallery__arrow { display: none !important; } }
+
 /* місце знизу під фіксовану панель категорій на мобільному */
 /* Hero: текст «Про нас» на всю ширину — двома колонками на широких екранах */
 .hero-about-text { column-count: 2; column-gap: 64px; max-width: 1180px; margin: 0 auto; }

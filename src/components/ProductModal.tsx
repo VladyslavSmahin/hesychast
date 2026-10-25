@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocalized } from "@/features/publicData";
 import { useT } from "@/features/locale/LocaleContext";
-import { Icon, PhotoSlot } from "./icons";
+import { Icon } from "./icons";
+import PhotoGallery from "./PhotoGallery";
 import { PreorderNote } from "./PreorderTag";
 import ProductOptions, { hasOptions, optionsReady } from "./ProductOptions";
 import { ProductOptionsProvider, useProductOptions } from "./ProductOptionsContext";
@@ -86,7 +87,7 @@ function ModalBody({
         {/* фото — квадрат: висота дорівнює ширині колонки; під ним — обрана наклейка */}
         <div style={{ alignSelf: "start", minWidth: 0 }}>
         <div style={{ position: "relative", aspectRatio: "1 / 1" }}>
-          <PhotoSlot h="100%" photo={item.photo} alt={productName(item)} sizes="(max-width: 900px) 100vw, 450px" soon={item.price <= 0} soonLabel={t("catalog.soon")} />
+          <PhotoGallery arrows h="100%" photos={item.photos} alt={productName(item)} sizes="(max-width: 900px) 100vw, 450px" soon={item.price <= 0} soonLabel={t("catalog.soon")} />
           {item.badge && (
             <div
               style={{

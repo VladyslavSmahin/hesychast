@@ -5,6 +5,16 @@ import { createClient } from "@/lib/supabase/client";
 import { useAdminAuth, type Role } from "@/features/admin/AdminAuthContext";
 import s from "@/components/admin/admin.module.css";
 
+type AccountRole = Role | "customer";
+
+interface AccountRow {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: AccountRole;
+  created_at: string;
+}
+
 interface StaffRow {
   id: string;
   email: string;
@@ -24,6 +34,8 @@ export default function StaffPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [accountsQuery, setAccountsQuery] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,6 +45,14 @@ export default function StaffPage() {
       .order("created_at", { ascending: true });
     if (error) setError(error.message);
     else setRows((data as StaffRow[]) ?? []);
+    // усі зареєстровані акаунти (admin бачить усі профілі за RLS)
+    const { data: acc, error: accErr } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, role, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (accErr) setError(accErr.message);
+    else setAccounts((acc as AccountRow[]) ?? []);
     setLoading(false);
   }, [supabase]);
 
@@ -49,8 +69,8 @@ export default function StaffPage() {
     );
   }
 
-  // задає/скидає пароль через серверний route (потрібен service_role). Email має бути
-  // вже у білому списку — тригер створить профіль лише для нього.
+  // задає/скидає пароль через серверний route (потрібен service_role). Лише для email
+  // з білого списку — паролі покупцям адмінка не видає, вони задають їх самі.
   const setStaffPassword = async (eml: string, pwd: string): Promise<string | null> => {
     const res = await fetch("/api/admin/staff/password", {
       method: "POST",
@@ -105,6 +125,19 @@ export default function StaffPage() {
     if (error) setError(error.message); else load();
   };
 
+  // роль акаунта = запис у білому списку: тригер sync_staff_role одразу оновлює profiles.
+  // customer — прибираємо зі списку, admin/editor — додаємо або міняємо роль.
+  const setAccountRole = async (acc: AccountRow, newRole: AccountRole) => {
+    setError(""); setNotice("");
+    const eml = (acc.email ?? "").toLowerCase();
+    if (!eml) { setError("У акаунта немає email"); return; }
+    const { error } = newRole === "customer"
+      ? await supabase.from("allowed_staff").delete().eq("email", eml)
+      : await supabase.from("allowed_staff").upsert({ email: eml, role: newRole }, { onConflict: "email" });
+    if (error) setError(error.message);
+    else { setNotice(`${eml}: роль ${newRole}`); load(); }
+  };
+
   const remove = async (id: string) => {
     const { error } = await supabase.from("allowed_staff").delete().eq("id", id);
     if (error) setError(error.message); else load();
@@ -113,16 +146,12 @@ export default function StaffPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <p className={s.hint}>
-        Білий список — email співробітників, які можуть увійти через Google або за паролем.
-        Пароль необов’язковий: задайте його тут, щоб дозволити вхід без Google. Видалення з списку
-        відкликає доступ (профіль і дані захищені RLS).
+        Зареєструватися на сайті може будь-хто — такий акаунт отримує роль <b>customer</b>
+        (особистий кабінет, без доступу до адмінки). Щоб дати доступ, змініть роль акаунта нижче
+        або заздалегідь додайте email у білий список — роль застосується одразу або при реєстрації.
         <br />
         <b>editor</b> — може все, крім видалення. <b>admin</b> — повний доступ.
-        <br />
-        <span style={{ opacity: 0.7 }}>
-          Примітка: роль застосовується при першому вході користувача. Якщо акаунт уже входив до
-          додавання — попросіть увійти ще раз.
-        </span>
+        Пароль необов’язковий: задайте його тут, щоб дозволити вхід без Google.
       </p>
 
       {/* Add form */}
@@ -155,9 +184,53 @@ export default function StaffPage() {
         </div>
       </form>
 
+      {/* Accounts */}
+      <div className={s.card}>
+        <div className={s.cardHead}>
+          <div className={s.cardTitle}>Акаунти ({accounts.length})</div>
+          <input className={s.input} style={{ width: 240 }} placeholder="Пошук: email або ім’я"
+            value={accountsQuery} onChange={(e) => setAccountsQuery(e.target.value)} />
+        </div>
+        <div className={s.tableWrap}>
+          <table className={s.table}>
+            <thead>
+              <tr><th>Email</th><th>Ім’я</th><th>Роль</th><th>Зареєстровано</th></tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={4} style={{ color: "var(--text-secondary)", padding: 20 }}>Завантаження…</td></tr>
+              ) : accounts
+                .filter((a) => {
+                  const q = accountsQuery.trim().toLowerCase();
+                  return !q || (a.email ?? "").toLowerCase().includes(q) || (a.full_name ?? "").toLowerCase().includes(q);
+                })
+                .map((a) => {
+                  const isSelf = a.id === user?.id;
+                  return (
+                    <tr key={a.id}>
+                      <td>{a.email} {isSelf && <span className={s.hint} style={{ fontSize: 11 }}>(ви)</span>}</td>
+                      <td>{a.full_name || <span style={{ color: "var(--text-secondary)" }}>—</span>}</td>
+                      <td>
+                        <select className={s.input} style={{ width: "auto", padding: "6px 10px" }}
+                          value={a.role} disabled={isSelf}
+                          onChange={(e) => setAccountRole(a, e.target.value as AccountRole)}>
+                          <option value="customer">customer</option>
+                          <option value="editor">editor</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      </td>
+                      <td style={{ color: "var(--text-secondary)" }}>{new Date(a.created_at).toLocaleDateString("uk-UA")}</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Table */}
       <div className={s.card}>
-        <div className={s.cardHead}><div className={s.cardTitle}>Білий список ({rows.length})</div></div>
+        <div className={s.cardHead}><div className={s.cardTitle}>Білий список — співробітники ({rows.length})</div></div>
         <div className={s.tableWrap}>
           <table className={s.table}>
             <thead>

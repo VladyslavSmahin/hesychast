@@ -91,7 +91,7 @@ export default async function CategoryPage({ params }: Params) {
           <Link href="/" style={{ color: "var(--accent)" }}>каталогу</Link>.
         </p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(var(--menu-cols, 4), minmax(0, 1fr))", gap: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 18 }}>
           {products.map((p) => (
             <ProductGridCard key={p.id} item={p} />
           ))}

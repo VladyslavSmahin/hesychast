@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { cookies } from "next/headers";
 import { CartProvider } from "@/features/cart/CartContext";
+import { AccountProvider } from "@/features/account/AccountContext";
 import { LocaleProvider } from "@/features/locale/LocaleContext";
 import { ThemeProvider } from "@/features/theme/ThemeContext";
 import { LOCALE_COOKIE, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -80,7 +81,9 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider initial={theme}>
           <LocaleProvider initial={locale}>
-            <CartProvider>{children}</CartProvider>
+            <AccountProvider>
+              <CartProvider>{children}</CartProvider>
+            </AccountProvider>
           </LocaleProvider>
         </ThemeProvider>
         <Analytics />

@@ -9,7 +9,7 @@ import ProductGridCard from "@/components/catalog/ProductGridCard";
 import AddToCartButton from "@/components/catalog/AddToCartButton";
 import { ProductOptionsProvider } from "@/components/ProductOptionsContext";
 import StickerPreview from "@/components/StickerPreview";
-import { PhotoSlot } from "@/components/icons";
+import PhotoGallery from "@/components/PhotoGallery";
 import JsonLd from "@/components/JsonLd";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
 import { fetchProductBySlug, fetchRelatedProducts, fetchAllSlugs, fetchStickers } from "@/features/catalog.server";
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       title: `${product.name} — ІСІХАСТ`,
       description,
       url: `/tovar/${product.slug}`,
-      images: product.photo ? [{ url: product.photo, alt: product.name }] : undefined,
+      images: product.photos.length ? product.photos.map((url) => ({ url, alt: product.name })) : undefined,
     },
   };
 }
@@ -101,7 +101,7 @@ export default async function ProductPage({ params }: Params) {
       <article style={{ display: "grid", gridTemplateColumns: "var(--modal-cols)", gap: 32, alignItems: "start" }}>
         {/* фото — квадрат, як у модалці */}
         <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", aspectRatio: "1 / 1", minWidth: 0 }}>
-          <PhotoSlot h="100%" photo={product.photo} alt={name} priority sizes="(max-width: 900px) 100vw, 560px" soon={product.price <= 0} />
+          <PhotoGallery arrows h="100%" photos={product.photos} alt={name} priority sizes="(max-width: 900px) 100vw, 560px" soon={product.price <= 0} />
           {product.badge && (
             <div
               style={{
@@ -164,7 +164,7 @@ export default async function ProductPage({ params }: Params) {
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "var(--h2-size)", fontWeight: 700, marginBottom: 22 }}>
             {isRu ? "Похожие товары" : "Схожі товари"}
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(var(--menu-cols, 4), minmax(0, 1fr))", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 18 }}>
             {related.map((p) => (
               <ProductGridCard key={p.id} item={p} />
             ))}

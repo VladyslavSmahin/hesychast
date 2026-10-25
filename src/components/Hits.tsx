@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ArrowBtn from "./ArrowBtn";
 import MenuCard from "./MenuCard";
 import { usePublicCatalog, usePublicNavSpecials, useGloss } from "@/features/publicData";
@@ -8,6 +8,7 @@ import { useIsMobile } from "@/features/useIsMobile";
 import type { Product } from "@/lib/types";
 
 const PER_PAGE = 4;
+const AUTO_MS = 2000; // мобільний слайдер: крок кожні 2 с
 
 export default function Hits({
   onAdd,
@@ -58,8 +59,7 @@ export default function Hits({
   const items = active.items;
   const pages = Math.ceil(items.length / PER_PAGE);
   const safePage = Math.min(page, Math.max(0, pages - 1));
-  // на мобільному показуємо всі товари вкладки списком, без слайдера
-  const visible = isMobile ? items : items.slice(safePage * PER_PAGE, safePage * PER_PAGE + PER_PAGE);
+  const visible = items.slice(safePage * PER_PAGE, safePage * PER_PAGE + PER_PAGE);
 
   const selectTab = (i: number) => { setTabIdx(i); setPage(0); };
   const prev = () => setPage((p) => (p - 1 + pages) % pages);
@@ -95,6 +95,9 @@ export default function Hits({
 
         {items.length === 0 ? (
           <p style={{ color: "var(--text-secondary)", fontSize: 15, opacity: 0.8, padding: "8px 0" }}>Поки немає товарів у цій категорії.</p>
+        ) : isMobile ? (
+          // key — щоб при зміні вкладки слайдер стартував з початку й знову гортав сам
+          <MobileRow key={active.key} items={items} onAdd={onAdd} onCardClick={onCardClick} />
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "var(--menu-cols)", gap: 20 }}>
             {visible.map((item) => (
@@ -121,5 +124,62 @@ export default function Hits({
         )}
       </div>
     </section>
+  );
+}
+
+const GAP = 12;
+
+/**
+ * Мобільний слайдер в один рядок: 2 картки на екрані, сам гортає по одній кожні 2 с
+ * (з останньої — на початок). Перший дотик покупця зупиняє автогортання до зміни вкладки.
+ */
+function MobileRow({
+  items,
+  onAdd,
+  onCardClick,
+}: {
+  items: Product[];
+  onAdd: (item: Product) => void;
+  onCardClick: (item: Product) => void;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  const [auto, setAuto] = useState(true);
+
+  useEffect(() => {
+    if (!auto || items.length <= 2) return;
+    // хто просить менше анімацій — не гортаємо самі
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => {
+      const el = track.current;
+      const card = el?.firstElementChild as HTMLElement | null;
+      if (!el || !card) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      if (atEnd) el.scrollTo({ left: 0, behavior: "smooth" });
+      else el.scrollBy({ left: card.offsetWidth + GAP, behavior: "smooth" });
+    }, AUTO_MS);
+    return () => clearInterval(id);
+  }, [auto, items.length]);
+
+  const stop = () => setAuto(false);
+
+  return (
+    <div
+      ref={track}
+      className="no-scrollbar"
+      onTouchStart={stop}
+      onPointerDown={stop}
+      onWheel={stop}
+      style={{
+        display: "flex", gap: GAP, overflowX: "auto", scrollSnapType: "x mandatory",
+        // картки «впритул» до краю екрана — видно, що рядок гортається
+        margin: "0 calc(-1 * var(--page-pad))", padding: "0 var(--page-pad)", scrollPaddingLeft: "var(--page-pad)",
+      }}
+    >
+      {items.map((item) => (
+        <div key={item.id} style={{ flex: `0 0 calc(50% - ${GAP / 2}px)`, scrollSnapAlign: "start", display: "grid" }}>
+          <MenuCard item={item} onAdd={onAdd} onCardClick={onCardClick} />
+        </div>
+      ))}
+    </div>
   );
 }

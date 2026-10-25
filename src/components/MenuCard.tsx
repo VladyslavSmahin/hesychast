@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Icon, PhotoSlot } from "./icons";
+import { Icon } from "./icons";
+import PhotoGallery from "./PhotoGallery";
 import { PreorderTag } from "./PreorderTag";
 import { hasOptions } from "./ProductOptions";
 import { useT } from "@/features/locale/LocaleContext";
@@ -55,7 +56,7 @@ export default function MenuCard({
       }}
     >
       <div style={{ position: "relative", background: "var(--bg-dark)", aspectRatio: compact ? undefined : "var(--card-ar, 1 / 1)" }}>
-        <PhotoSlot h={compact ? photoH : "100%"} photo={item.photo} alt={productName(item)} soon={soon} soonLabel={t("catalog.soon")} />
+        <PhotoGallery h={compact ? photoH : "100%"} photos={item.photos} alt={productName(item)} soon={soon} soonLabel={t("catalog.soon")} />
         {item.badge && (
           <div
             style={{

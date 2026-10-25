@@ -13,6 +13,7 @@ const num = (v: unknown) => (v == null ? 0 : Number(v));
 export type ProductRow = {
   id: string; slug: string; name: string; description: string | null;
   price: number | string; weight: string | null; badge: string | null; image_path: string | null;
+  images?: string[] | null;
   name_ru?: string | null;
   description_ru?: string | null;
   weight_ru?: string | null;
@@ -36,7 +37,7 @@ function parseColors(v: unknown): ProductColor[] {
 
 /** Поля товару, які потрібні витрині (спільний select для всіх публічних запитів). */
 export const PRODUCT_SELECT =
-  "id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order, category:categories(slug)";
+  "id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order, category:categories(slug)";
 
 export function mapProduct(p: ProductRow): Product {
   const cat = p.category;
@@ -54,6 +55,7 @@ export function mapProduct(p: ProductRow): Product {
     badge: (p.badge ?? "") as Badge,
     category: categorySlug,
     photo: p.image_path ?? null,
+    photos: [p.image_path, ...(p.images ?? [])].filter((x): x is string => !!x),
     availability: (p.availability ?? "in_stock") as Availability,
     sizes: p.sizes ?? [],
     colors: parseColors(p.colors),

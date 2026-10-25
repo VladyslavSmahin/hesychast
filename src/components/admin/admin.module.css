@@ -121,7 +121,7 @@
   gap: 16px;
   padding: 16px 28px;
   border-bottom: 1px solid var(--border);
-  background: rgba(13, 11, 9, 0.9);
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
 }
 .topTitle { font-family: var(--font-display); font-size: 25px; font-weight: 700; color: var(--text-primary); }
@@ -247,7 +247,7 @@
 /* ===== Login ===== */
 .login {
   min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
-  background: linear-gradient(135deg, #2A1A10 0%, #1A130D 50%, #0D0B09 100%);
+  background: var(--bg-primary);
 }
 .loginCard {
   width: 380px; max-width: 100%; background: var(--bg-card); border: 1px solid var(--border-light);

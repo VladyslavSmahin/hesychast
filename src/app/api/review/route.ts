@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendTelegramMessage, esc } from "@/lib/telegram";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 interface ReviewBody {
@@ -23,7 +24,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "bad_json" }, { status: 400 });
   }
 
-  const { name, contact, rating, text } = body;
+  // відгук від акаунта: імʼя й контакт беремо з профілю, а не з форми
+  const session = await createSessionClient();
+  const { data: { user } } = await session.auth.getUser();
+  let { name, contact } = body;
+  const { rating, text } = body;
+  if (user) {
+    const { data: profile } = await session.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    name = profile?.full_name?.trim() || name?.trim() || user.email || "";
+    contact = profile?.phone?.trim() || user.email || contact;
+  }
   if (!name?.trim() || !contact?.trim() || !text?.trim()) {
     return NextResponse.json({ ok: false, error: "missing_fields" }, { status: 400 });
   }
@@ -38,6 +48,7 @@ export async function POST(req: Request) {
   // Запис у БД зі статусом pending (модерація в адмінці)
   try {
     const { error } = await createAdminClient().from("reviews").insert({
+      user_id: user?.id ?? null,
       author_name: name.trim(), contact: contact.trim(), rating: ratingVal, text: text.trim(), status: "pending",
     });
     if (error) console.error("review insert failed:", error.message);
@@ -50,7 +61,7 @@ export async function POST(req: Request) {
   const msg = [
     "📝 <b>НОВИЙ ВІДГУК</b>",
     "",
-    `👤 <b>Ім'я:</b> ${esc(name)}`,
+    `👤 <b>Ім'я:</b> ${esc(name)}${user ? " (акаунт)" : ""}`,
     `📞 <b>Контакт:</b> ${esc(contact)}`,
     `⭐ <b>Оцінка:</b> ${stars}`,
     "",

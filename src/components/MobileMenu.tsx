@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import LocaleSwitch from "./LocaleSwitch";
 import ThemeSwitch from "./ThemeSwitch";
 import { useT } from "@/features/locale/LocaleContext";
+import { useAccount } from "@/features/account/AccountContext";
 import Link from "next/link";
 import { Icon } from "./icons";
 import { CONTACTS, ASSET_ICONS } from "@/data/site";
@@ -18,7 +19,9 @@ export default function MobileMenu({
   onClose: () => void;
   onNavClick: (cat: NavCategory) => void;
 }) {
-  const brand = useT()("brand");
+  const t = useT();
+  const brand = t("brand");
+  const { account, isStaff } = useAccount();
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -89,6 +92,10 @@ export default function MobileMenu({
           </a>
 
           {[
+            account
+              ? { href: "/account", label: t("account.title") }
+              : { href: "/login", label: `${t("auth.signin")} / ${t("auth.signup")}` },
+            ...(isStaff ? [{ href: "/admin", label: t("account.admin") }] : []),
             { href: "/oferta", label: "Публічна оферта" },
             { href: "/privacy", label: "Політика конфіденційності" },
           ].map((it) => (

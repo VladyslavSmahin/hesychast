@@ -7,6 +7,8 @@ import ThemeSwitch from "./ThemeSwitch";
 import { Icon } from "./icons";
 import { CONTACTS, ASSET_ICONS } from "@/data/site";
 import { useCart } from "@/features/cart/CartContext";
+import { useAccount } from "@/features/account/AccountContext";
+import Link from "next/link";
 import { usePublicCategories, usePublicNavSpecials, useLocalized } from "@/features/publicData";
 import type { NavCategory } from "@/lib/types";
 
@@ -45,6 +47,8 @@ export default function Header({
   onMenuToggle: () => void;
 }) {
   const { count } = useCart();
+  const { account } = useAccount();
+  const t = useT();
   const cats = usePublicCategories({ navOnly: true });
   const { categoryName } = useLocalized();
   const specials = usePublicNavSpecials();
@@ -106,6 +110,22 @@ export default function Header({
               <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-secondary)", letterSpacing: 1 }}>{CONTACTS.hours}</span>
             </div>
           </div>
+
+          {/* акаунт: залогінений — у кабінет, інакше — на вхід.
+              На телефоні в шапку не влазить — там він у бургер-меню */}
+          <Link
+            className="desktop-only"
+            href={account ? "/account" : "/login"}
+            aria-label={account ? t("account.title") : t("auth.signin")}
+            title={account ? (account.fullName || account.email) : t("auth.signin")}
+            style={{
+              position: "relative", width: 44, height: 44, border: "1px solid var(--border-light)",
+              color: account ? "var(--accent)" : "var(--text-primary)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}
+          >
+            <Icon.User width="20" height="20" />
+          </Link>
 
           <button
             onClick={onCartOpen}

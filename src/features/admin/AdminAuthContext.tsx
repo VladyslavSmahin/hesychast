@@ -1,8 +1,8 @@
 "use client";
 
-// Реальна авторизація адмінки через Supabase Auth (Google OAuth).
-// Роль береться з таблиці profiles (її заповнює тригер handle_new_user лише для
-// email із білого списку allowed_staff). Якщо профілю немає — доступу немає (denied).
+// Авторизація адмінки через Supabase Auth (Google OAuth або пароль).
+// Роль береться з таблиці profiles: профіль є в кожного акаунта, але admin/editor —
+// лише для email із allowed_staff. Покупець (customer) — доступу немає (denied).
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -20,7 +20,7 @@ interface AdminAuthValue {
   user: CurrentUser | null;
   /** ще завантажуємо сесію/роль */
   loading: boolean;
-  /** залогінений у Google, але email не в білому списку (немає profile) */
+  /** залогінений, але не staff (покупець або немає profile) */
   denied: string | null;
   logout: () => Promise<void>;
 }
@@ -45,7 +45,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       // роль із profiles (заповнюється тригером лише для білого списку)
       const { data } = await supabase.from("profiles").select("role").eq("id", au.id).maybeSingle();
       if (!active) return;
-      if (data?.role) {
+      // покупці (role = customer) теж мають профіль — в адмінку лише admin/editor
+      if (data?.role === "admin" || data?.role === "editor") {
         setUser({
           id: au.id,
           email: au.email ?? "",

@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "./icons";
 import { TEXTS } from "@/data/site";
+import { useAccount } from "@/features/account/AccountContext";
 
 export default function ReviewModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState("");
@@ -15,6 +16,10 @@ export default function ReviewModal({ open, onClose }: { open: boolean; onClose:
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // залогінений — пише від імені акаунта, імʼя й контакт сервер бере з профілю
+  const { account } = useAccount();
+  const asAccount = !!account;
+  const filled = asAccount ? !!text : !!(name && contact && text);
 
   useEffect(() => {
     if (!open) return;
@@ -28,7 +33,7 @@ export default function ReviewModal({ open, onClose }: { open: boolean; onClose:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !contact || !text || submitting) return;
+    if (!filled || submitting) return;
     setSubmitting(true);
     try {
       await fetch("/api/review", {
@@ -94,10 +99,16 @@ export default function ReviewModal({ open, onClose }: { open: boolean; onClose:
               Поділіться враженнями від покупки. Ми читаємо кожен відгук.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "var(--form-2col)", gap: 12, marginBottom: 12 }}>
-              <input className="form-input" placeholder="Ім'я" value={name} onChange={(e) => setName(e.target.value)} />
-              <input className="form-input" placeholder="Телефон або email" value={contact} onChange={(e) => setContact(e.target.value)} />
-            </div>
+            {asAccount ? (
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                Відгук від акаунта <b style={{ color: "var(--text-primary)" }}>{account.fullName || account.email}</b>
+              </p>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "var(--form-2col)", gap: 12, marginBottom: 12 }}>
+                <input className="form-input" placeholder="Ім'я" value={name} onChange={(e) => setName(e.target.value)} />
+                <input className="form-input" placeholder="Телефон або email" value={contact} onChange={(e) => setContact(e.target.value)} />
+              </div>
+            )}
 
             <div style={{ marginBottom: 12, padding: "14px 16px", background: "var(--bg-elevated)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 16 }}>
               <span style={{ fontSize: 11, fontWeight: 300, letterSpacing: 2, textTransform: "uppercase", color: "var(--text-secondary)" }}>Оцінка:</span>
@@ -119,7 +130,7 @@ export default function ReviewModal({ open, onClose }: { open: boolean; onClose:
 
             <textarea className="form-input" placeholder="Ваш відгук..." value={text} onChange={(e) => setText(e.target.value)} style={{ marginBottom: 20, width: "100%" }} />
 
-            <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={!name || !contact || !text || submitting}>
+            <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={!filled || submitting}>
               {submitting ? "Надсилаємо…" : "Надіслати"}
             </button>
           </form>
