@@ -65,7 +65,10 @@ export default function HomeClient() {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      // на телефоні під шапкою ще закріплена смуга категорій — відступаємо й від неї
+      const bar = document.getElementById("mobile-catbar");
+      const offset = bar ? bar.getBoundingClientRect().bottom + 12 : HEADER_OFFSET;
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
       window.scrollTo({ top, behavior: "smooth" });
     }
   };

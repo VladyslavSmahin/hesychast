@@ -287,8 +287,10 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
 .sticker-row::-webkit-scrollbar { display: none; }
 .hero-about-text p:last-child { margin-bottom: 0; }
 
+/* мобільна смуга категорій закріплена під шапкою — зсуваємо сторінку на її висоту */
 @media (max-width: 860px) {
-  body { padding-bottom: 84px; }
+  :root { --catbar-h: 54px; }
+  body:has(#mobile-catbar) { padding-top: var(--catbar-h); }
 }
 
 /* показувати лише на десктопі / лише на мобільному */

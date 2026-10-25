@@ -32,17 +32,19 @@ export default function MobileCategoryBar({
   };
 
   return (
+    // закріплена смуга одразу під шапкою (висота — --catbar-h, під неї відступ у body)
     <div
+      id="mobile-catbar"
       style={{
-        position: "fixed", left: 10, right: 10, bottom: 10, zIndex: 90,
+        position: "fixed", left: 0, right: 0, top: "var(--header-h)", zIndex: 99,
+        height: "var(--catbar-h)", display: "flex", alignItems: "center",
         background: "var(--header-bg-scrolled)", backdropFilter: "blur(14px)",
-        border: "1px solid var(--border-light)", borderRadius: 14,
-        boxShadow: "var(--shadow-md)",
+        borderBottom: "1px solid var(--border)",
       }}
     >
       <div
         className="no-scrollbar"
-        style={{ display: "flex", gap: 6, overflowX: "auto", padding: "8px 10px", scrollSnapType: "x proximity" }}
+        style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 var(--page-pad)", width: "100%", scrollSnapType: "x proximity", scrollPaddingLeft: "var(--page-pad)" }}
       >
         {navItems.map((c) => {
           const act = isActive(c);
