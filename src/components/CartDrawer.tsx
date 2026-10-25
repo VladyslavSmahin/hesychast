@@ -65,7 +65,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
   // залогінений покупець: імʼя, телефон і адресу за замовчуванням беремо з профілю.
   // Лише в порожні поля — введене руками не перетираємо.
-  const { account } = useAccount();
+  const { account, loading: accountLoading } = useAccount();
   useEffect(() => {
     if (step !== "checkout" || !account) return;
     if (account.fullName) setName((v) => v || account.fullName);
@@ -212,6 +212,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
                 </div>
               </div>
 
+              {!account && !accountLoading && <AccountOffer />}
+
               <input className="form-input" placeholder={t("cart.name")} value={name} onChange={(e) => setName(e.target.value)} />
               <input className="form-input" type="tel" inputMode="numeric" autoComplete="tel"
                 placeholder="093 728 42 98" value={phone}
@@ -307,6 +309,29 @@ function ExtrasBlock({ extras, items, add }: { extras: Product[]; items: CartIte
         })}
       </div>
       )}
+    </div>
+  );
+}
+
+/** Гість у кошику: пропонуємо увійти чи зареєструватись. Не обовʼязково — можна
+ *  замовити й так. Кошик живе в localStorage, після входу повертаємо з відкритим кошиком. */
+function AccountOffer() {
+  const t = useT();
+  const back = encodeURIComponent("/?cart=1");
+  const link: CSSProperties = {
+    flex: 1, textAlign: "center", padding: "10px 6px", fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase",
+    textDecoration: "none", border: "1px solid var(--border-light)", color: "var(--text-primary)",
+  };
+  return (
+    <div style={{ padding: "14px 14px 12px", border: "1px solid var(--accent)", background: "var(--bg-elevated)" }}>
+      <p style={{ fontSize: 12, lineHeight: 1.55, color: "var(--text-primary)", margin: "0 0 10px" }}>{t("cart.accountOffer")}</p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Link href={`/login?mode=signup&next=${back}`} style={{ ...link, background: "var(--accent)", borderColor: "var(--accent)", color: "var(--on-accent)" }}>
+          {t("auth.signup")}
+        </Link>
+        <Link href={`/login?next=${back}`} style={link}>{t("auth.signin")}</Link>
+      </div>
+      <p style={{ fontSize: 10, color: "var(--text-secondary)", margin: "8px 0 0" }}>{t("cart.accountOfferHint")}</p>
     </div>
   );
 }

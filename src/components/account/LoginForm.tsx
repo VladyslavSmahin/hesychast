@@ -36,6 +36,7 @@ export default function LoginForm() {
     const n = sp.get("next");
     if (n && n.startsWith("/") && !n.startsWith("//")) setNext(n);
     if (sp.get("error") === "auth") setError(t("auth.errLink"));
+    if (sp.get("mode") === "signup") setMode("signup");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

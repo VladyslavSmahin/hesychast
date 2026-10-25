@@ -32,6 +32,15 @@ export default function HomeClient() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalItem, setModalItem] = useState<Product | null>(null);
 
+  // ?cart=1 — повернення після входу/реєстрації з кошика: одразу відкриваємо кошик
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("cart") !== "1") return;
+    setCartOpen(true);
+    url.searchParams.delete("cart");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
+
   // Товар відкривається модалкою поверх каталогу, але адреса змінюється на
   // /tovar/<slug> — посилання можна скопіювати, а «назад» повертає в каталог.
   // Сторінку товару віддає сервер при прямому заході (її ж бачить пошуковик).
