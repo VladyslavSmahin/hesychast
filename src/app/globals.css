@@ -359,12 +359,7 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
 
 /* Дуже вузькі екрани: шапка стискається, щоб бургер не вилазив */
 @media (max-width: 420px) {
-  .header-locale button { padding: 4px 6px !important; font-size: 10px !important; }
-  .burger { width: 38px !important; }
-}
-
-@media (max-width: 360px) {
-  .header-locale { display: none; }   /* мову перемикають у бічному меню */
+  .header-account, .header-cart, .burger { width: 40px !important; height: 40px !important; }
 }
 
 @media (max-width: 520px) {

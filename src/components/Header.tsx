@@ -98,7 +98,8 @@ export default function Header({
 
         {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "flex-end" }}>
-          <span className="header-locale"><LocaleSwitch /></span>
+          {/* мова на телефоні — у бургер-меню, у шапці її місце займає кнопка акаунта */}
+          <span className="desktop-only"><LocaleSwitch /></span>
           <span className="desktop-only"><ThemeSwitch /></span>
           <div className="desktop-only" style={{ textAlign: "right" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", whiteSpace: "nowrap" }}>
@@ -111,10 +112,9 @@ export default function Header({
             </div>
           </div>
 
-          {/* акаунт: залогінений — у кабінет, інакше — на вхід.
-              На телефоні в шапку не влазить — там він у бургер-меню */}
+          {/* акаунт: залогінений — у кабінет, інакше — на вхід */}
           <Link
-            className="desktop-only"
+            className="header-account"
             href={account ? "/account" : "/login"}
             aria-label={account ? t("account.title") : t("auth.signin")}
             title={account ? (account.fullName || account.email) : t("auth.signin")}
@@ -128,6 +128,7 @@ export default function Header({
           </Link>
 
           <button
+            className="header-cart"
             onClick={onCartOpen}
             aria-label="Кошик"
             style={{
