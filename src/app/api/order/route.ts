@@ -124,10 +124,11 @@ export async function POST(req: Request) {
   if (ids.length) {
     const { data: prods } = await supabase
       .from("products")
-      .select("id, name, price, is_available, sizes, colors, sticker_option, sticker_price")
+      .select("id, name, price, is_available, coming_soon, sizes, colors, sticker_option, sticker_price")
       .in("id", ids);
     for (const p of prods ?? []) {
-      if (!p.is_available) continue;
+      // «Скоро в продажу» ще не продаємо — як і недоступний товар
+      if (!p.is_available || p.coming_soon) continue;
       fromDb.set(p.id, {
         name: p.name,
         price: Number(p.price),

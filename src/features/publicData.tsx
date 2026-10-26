@@ -4,7 +4,7 @@
 // на сервері (RSC) і передані сюди як value. Хуки повторюють сигнатури колишніх
 // localStorage-сторів, щоб публічні компоненти змінювались мінімально.
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { Product, Banner, NavCategory, Sticker, NewsPost, GalleryItem, VideoItem } from "@/lib/types";
 import { GLOSSARY_DEFAULTS, type Glossary } from "@/lib/glossary";
 import { SECTIONS_DEFAULT, type SectionVisibility } from "@/lib/sections";
@@ -53,8 +53,16 @@ export function PublicDataProvider({ value, children }: { value: PublicData; chi
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** Товари каталогу (меню, новинки, кошик) — без прихованих з меню. */
 export function usePublicCatalog(): Product[] {
-  return useContext(Ctx).catalog;
+  const catalog = useContext(Ctx).catalog;
+  return useMemo(() => catalog.filter((p) => !p.hiddenInMenu), [catalog]);
+}
+
+/** Стрічка «Скоро в продажу» — незалежно від того, чи товар прихований з меню. */
+export function usePublicComingSoon(): Product[] {
+  const catalog = useContext(Ctx).catalog;
+  return useMemo(() => catalog.filter((p) => p.comingSoon), [catalog]);
 }
 
 export function usePublicCategories(opts?: { navOnly?: boolean }): PubCategory[] {

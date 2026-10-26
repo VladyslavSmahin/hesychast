@@ -5,6 +5,7 @@ import { useCart } from "@/features/cart/CartContext";
 import ProductOptions, { hasOptions, optionsReady } from "@/components/ProductOptions";
 import { useProductOptions } from "@/components/ProductOptionsContext";
 import { useT } from "@/features/locale/LocaleContext";
+import { isSoon } from "@/lib/types";
 
 // Селектори опцій + кнопка «Додати в кошик» для серверної сторінки товару.
 // Обраний розмір/колір/наклейка лежать у ProductOptionsProvider — те саме
@@ -15,7 +16,7 @@ export default function AddToCartButton() {
   const t = useT();
   const [added, setAdded] = useState(false);
 
-  const soon = product.price <= 0;              // товар ще без ціни
+  const soon = isSoon(product);                 // без ціни або «Скоро в продажу»
   const ready = optionsReady(product, options) && !soon;
 
   const handleAdd = () => {

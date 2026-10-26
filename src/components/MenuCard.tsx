@@ -7,7 +7,7 @@ import { PreorderTag } from "./PreorderTag";
 import { hasOptions } from "./ProductOptions";
 import { useT } from "@/features/locale/LocaleContext";
 import { useGloss, useLocalized } from "@/features/publicData";
-import type { Product } from "@/lib/types";
+import { isSoon, type Product } from "@/lib/types";
 
 // Картка — це посилання на /tovar/<slug>: пошуковик бачить звичайне <a href>
 // і доходить до сторінки товару. Клік користувача перехоплюємо самі — відкриваємо
@@ -35,7 +35,7 @@ export default function MenuCard({
   const priceSize = compact ? 16 : 18;
   const addSize = compact ? 30 : 34;
   // ціна 0 — товар ще не в продажу: замість фото заглушка, кнопки «+» немає
-  const soon = item.price <= 0;
+  const soon = isSoon(item);
 
   return (
     <Link

@@ -14,6 +14,7 @@ import Footer from "./Footer";
 import CartDrawer from "./CartDrawer";
 import MobileMenu from "./MobileMenu";
 import MobileCategoryBar from "./MobileCategoryBar";
+import ComingSoonStrip from "./ComingSoonStrip";
 import { useCart } from "@/features/cart/CartContext";
 import { useSectionOn } from "@/features/publicData";
 import type { NavCategory, Product } from "@/lib/types";
@@ -103,6 +104,7 @@ export default function HomeClient() {
           setNavFilter={setNavFilter}
         />
       )}
+      <ComingSoonStrip onAdd={add} onCardClick={openProduct} />
       {on.reviews && <ReviewsList />}
       {on.clients && <GallerySection />}
       {on.map && <MapSection />}

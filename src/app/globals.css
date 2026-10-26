@@ -270,6 +270,11 @@ textarea.form-input { resize: vertical; min-height: 120px; font-family: var(--fo
 
 /* галерея фото товару: стрілки — у картках при наведенні, у модалці/на сторінці завжди;
    на тач-пристроях їх немає (там свайп) */
+/* стрічка «Скоро в продажу»: 4 картки на десктопі, 3 на планшеті, 2 на телефоні */
+.soon-card { flex: 0 0 calc((100% - 3 * 18px) / 4); }
+@media (max-width: 1180px) { .soon-card { flex-basis: calc((100% - 2 * 18px) / 3); } }
+@media (max-width: 640px)  { .soon-card { flex-basis: calc((100% - 18px) / 2); } }
+
 .photo-gallery__arrow { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .photo-gallery:hover .photo-gallery__arrow,
 .photo-gallery--arrows .photo-gallery__arrow { opacity: 1; pointer-events: auto; }

@@ -72,6 +72,15 @@ export interface Product {
   stickerPrice: number;
   /** картинка з розмірною сіткою або null */
   sizeChart: string | null;
+  /** прихований з каталогу (меню, категорії, новинки); сторінка за посиланням лишається */
+  hiddenInMenu: boolean;
+  /** у стрічці «Скоро в продажу»; купити не можна */
+  comingSoon: boolean;
+}
+
+/** Товар ще не продається: без ціни або позначений «Скоро в продажу». */
+export function isSoon(p: Pick<Product, "price" | "comingSoon">): boolean {
+  return p.price <= 0 || p.comingSoon;
 }
 
 /** Банер головної сторінки (Hero-слайдер). Просто картинка, без кліку/ціни. */

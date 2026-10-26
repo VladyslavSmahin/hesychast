@@ -9,7 +9,7 @@ import { PreorderNote } from "./PreorderTag";
 import ProductOptions, { hasOptions, optionsReady } from "./ProductOptions";
 import { ProductOptionsProvider, useProductOptions } from "./ProductOptionsContext";
 import StickerPreview from "./StickerPreview";
-import type { CartOptions, Product } from "@/lib/types";
+import { isSoon, type CartOptions, type Product } from "@/lib/types";
 
 export default function ProductModal({
   item,
@@ -87,7 +87,7 @@ function ModalBody({
         {/* фото — квадрат: висота дорівнює ширині колонки; під ним — обрана наклейка */}
         <div style={{ alignSelf: "start", minWidth: 0 }}>
         <div style={{ position: "relative", aspectRatio: "1 / 1" }}>
-          <PhotoGallery arrows h="100%" photos={item.photos} alt={productName(item)} sizes="(max-width: 900px) 100vw, 450px" soon={item.price <= 0} soonLabel={t("catalog.soon")} />
+          <PhotoGallery arrows h="100%" photos={item.photos} alt={productName(item)} sizes="(max-width: 900px) 100vw, 450px" soon={isSoon(item)} soonLabel={t("catalog.soon")} />
           {item.badge && (
             <div
               style={{
@@ -132,10 +132,10 @@ function ModalBody({
             <button
               className="btn-primary"
               style={{ width: "100%", opacity: ready ? 1 : 0.5, cursor: ready ? "pointer" : "not-allowed" }}
-              disabled={!ready || item.price <= 0}
-              onClick={() => { if (!ready || item.price <= 0) return; onAdd(item, undefined, hasOptions(item) ? options : undefined); onClose(); }}
+              disabled={!ready || isSoon(item)}
+              onClick={() => { if (!ready || isSoon(item)) return; onAdd(item, undefined, hasOptions(item) ? options : undefined); onClose(); }}
             >
-              {item.price <= 0
+              {isSoon(item)
                 ? t("catalog.soon")
                 : !ready
                   ? t("opt.chooseFirst")

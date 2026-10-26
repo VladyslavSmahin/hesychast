@@ -42,6 +42,7 @@ interface Draft {
   photos: string[]; availability: Availability;
   sizes: string[]; colors: ProductColor[];
   stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
+  hiddenInMenu: boolean; comingSoon: boolean;
 }
 
 const MAX_PHOTOS = 10;
@@ -50,6 +51,7 @@ const emptyDraft = (categoryId: string): Draft => ({
   categoryId, name: "", nameRu: "", price: 0, weight: "", weightRu: "", badge: "",
   desc: "", descRu: "", photos: [], availability: "in_stock",
   sizes: [], colors: [], stickerOption: false, stickerPrice: 75, sizeChart: null,
+  hiddenInMenu: false, comingSoon: false,
 });
 
 // Заповнюємо повний ProductInput; поля, яких немає у спрощеній схемі, — дефолтами.
@@ -60,6 +62,7 @@ const toInput = (d: Draft): ProductInput => ({
   desc: d.desc, descRu: d.descRu, photo: d.photos[0] ?? null, images: d.photos.slice(1), availability: d.availability,
   sizes: d.sizes, colors: d.colors,
   stickerOption: d.stickerOption, stickerPrice: d.stickerPrice, sizeChart: d.sizeChart,
+  hiddenInMenu: d.hiddenInMenu, comingSoon: d.comingSoon,
 });
 
 export default function ProductsPage() {
@@ -111,6 +114,7 @@ export default function ProductsPage() {
       photos: [p.photo, ...p.images].filter((x): x is string => !!x), availability: p.availability,
       sizes: p.sizes, colors: p.colors,
       stickerOption: p.stickerOption, stickerPrice: p.stickerPrice, sizeChart: p.sizeChart,
+      hiddenInMenu: p.hiddenInMenu, comingSoon: p.comingSoon,
     });
   };
   const close = () => { setDraft(null); setEditing(null); };
@@ -245,7 +249,11 @@ export default function ProductsPage() {
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <div style={{ width: 38, height: 38, borderRadius: 6, flexShrink: 0, border: "1px solid var(--border)", background: p.photo ? `#0A0908 url(${p.photo}) center/cover no-repeat` : "var(--bg-elevated)" }} />
-                          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, flex: 1, minWidth: 0 }}>{p.name}</span>
+                          <span style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            {p.name}
+                            {p.hiddenInMenu && <span className={`${s.pill} ${s.pillOff}`} title="Сховано з меню">Сховано</span>}
+                            {p.comingSoon && <span className={`${s.pill} ${s.pillAdmin}`} title="У стрічці «Скоро в продажу»">Скоро</span>}
+                          </span>
                           <span className={s.cardMeta}>
                             {p.badge && <span className={`${s.pill} ${s.pillEditor}`}>{p.badge}</span>}
                             <span style={{ fontWeight: 700 }}>{p.price} грн</span>
@@ -386,6 +394,25 @@ export default function ProductsPage() {
               <p className={s.hint} style={{ fontSize: 11, marginTop: 6 }}>
                 {AVAILABILITY.find((a) => a.value === draft.availability)?.hint}
               </p>
+            </Field>
+
+            <Field label="Показ на сайті">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                  <input type="checkbox" checked={draft.hiddenInMenu} onChange={(e) => set("hiddenInMenu", e.target.checked)} style={{ marginTop: 2 }} />
+                  <span style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.45 }}>
+                    Сховати з меню
+                    <span className={s.hint} style={{ display: "block", fontSize: 11 }}>Не показувати в каталозі, новинках, категоріях і «Додатково». Сторінка товару за посиланням лишається.</span>
+                  </span>
+                </label>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                  <input type="checkbox" checked={draft.comingSoon} onChange={(e) => set("comingSoon", e.target.checked)} style={{ marginTop: 2 }} />
+                  <span style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.45 }}>
+                    Скоро в продажу
+                    <span className={s.hint} style={{ display: "block", fontSize: 11 }}>Показати в стрічці «Скоро в продажу» під меню. Купити поки не можна.</span>
+                  </span>
+                </label>
+              </div>
             </Field>
 
             <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>

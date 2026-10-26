@@ -40,7 +40,7 @@ async function fetchProductBySlugUncached(
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, category:categories(id, name, name_ru, slug)")
+    .select("id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, hidden_in_menu, coming_soon, category:categories(id, name, name_ru, slug)")
     .eq("slug", slug)
     .eq("is_available", true)
     .maybeSingle();
@@ -94,6 +94,7 @@ async function fetchCategoryBySlugUncached(
     .select(PRODUCT_SELECT)
     .eq("category_id", cat.id)
     .eq("is_available", true)
+    .eq("hidden_in_menu", false)
     .order("sort_order");
 
   const products = ((rows ?? []) as unknown as ProductRow[]).map(mapProduct);
@@ -116,6 +117,7 @@ async function fetchRelatedProductsUncached(categorySlug: string, exceptId: stri
     .select(PRODUCT_SELECT)
     .eq("category_id", cat.id)
     .eq("is_available", true)
+    .eq("hidden_in_menu", false)
     .neq("id", exceptId)
     .order("sort_order")
     .limit(limit);

@@ -23,6 +23,8 @@ export type ProductRow = {
   sticker_option?: boolean | null;
   sticker_price?: number | string | null;
   size_chart_image?: string | null;
+  hidden_in_menu?: boolean | null;
+  coming_soon?: boolean | null;
   category: { slug: string } | { slug: string }[] | null;
 };
 
@@ -37,7 +39,7 @@ function parseColors(v: unknown): ProductColor[] {
 
 /** Поля товару, які потрібні витрині (спільний select для всіх публічних запитів). */
 export const PRODUCT_SELECT =
-  "id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order, category:categories(slug)";
+  "id, slug, name, name_ru, description, description_ru, price, weight, weight_ru, badge, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, hidden_in_menu, coming_soon, sort_order, category:categories(slug)";
 
 export function mapProduct(p: ProductRow): Product {
   const cat = p.category;
@@ -62,6 +64,8 @@ export function mapProduct(p: ProductRow): Product {
     stickerOption: Boolean(p.sticker_option),
     stickerPrice: num(p.sticker_price),
     sizeChart: p.size_chart_image ?? null,
+    hiddenInMenu: Boolean(p.hidden_in_menu),
+    comingSoon: Boolean(p.coming_soon),
   };
 }
 

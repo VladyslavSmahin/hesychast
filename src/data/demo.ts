@@ -20,7 +20,7 @@ const P = (
   desc: string, weight = "", badge: Product["badge"] = "",
 ): Product => ({
   // slug демо-товару = id без префікса «p-» (демо-каталог теж має працювати на /tovar/<slug>)
-  id, slug: id.replace(/^p-/, ""), name, desc, price, weight, badge, category, photo: null, photos: [],
+  id, slug: id.replace(/^p-/, ""), name, desc, price, weight, badge, category, photo: null, photos: [], hiddenInMenu: false, comingSoon: false,
   availability: "in_stock", sizes: [], colors: [], stickerOption: false, stickerPrice: 0, sizeChart: null,
 });
 

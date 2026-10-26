@@ -12,6 +12,7 @@ import StickerPreview from "@/components/StickerPreview";
 import PhotoGallery from "@/components/PhotoGallery";
 import JsonLd from "@/components/JsonLd";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
+import { isSoon } from "@/lib/types";
 import { fetchProductBySlug, fetchRelatedProducts, fetchAllSlugs, fetchStickers } from "@/features/catalog.server";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -101,7 +102,7 @@ export default async function ProductPage({ params }: Params) {
       <article style={{ display: "grid", gridTemplateColumns: "var(--modal-cols)", gap: 32, alignItems: "start" }}>
         {/* фото — квадрат, як у модалці */}
         <div style={{ position: "relative", background: "var(--bg-dark)", border: "1px solid var(--border)", aspectRatio: "1 / 1", minWidth: 0 }}>
-          <PhotoGallery arrows h="100%" photos={product.photos} alt={name} priority sizes="(max-width: 900px) 100vw, 560px" soon={product.price <= 0} />
+          <PhotoGallery arrows h="100%" photos={product.photos} alt={name} priority sizes="(max-width: 900px) 100vw, 560px" soon={isSoon(product)} />
           {product.badge && (
             <div
               style={{

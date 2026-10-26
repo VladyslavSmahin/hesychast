@@ -23,6 +23,8 @@ export interface DbProduct {
   // опції одягу
   sizes: string[]; colors: ProductColor[];
   stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
+  // видимість: сховати з меню / стрічка «Скоро в продажу»
+  hiddenInMenu: boolean; comingSoon: boolean;
 }
 export interface ProductInput {
   categoryId: string | null;
@@ -30,6 +32,7 @@ export interface ProductInput {
   desc: string; descRu: string; photo: string | null; images: string[]; availability: Availability;
   sizes: string[]; colors: ProductColor[];
   stickerOption: boolean; stickerPrice: number; sizeChart: string | null;
+  hiddenInMenu: boolean; comingSoon: boolean;
 }
 
 const slugify = (s: string) =>
@@ -46,6 +49,7 @@ interface ProductRow {
   availability: Availability; sort_order: number;
   sizes: string[] | null; colors: unknown;
   sticker_option: boolean | null; sticker_price: number | string | null; size_chart_image: string | null;
+  hidden_in_menu: boolean | null; coming_soon: boolean | null;
 }
 
 /** Безпечний парс jsonb-кольорів. */
@@ -67,11 +71,12 @@ function mapProduct(p: ProductRow): DbProduct {
     sizes: p.sizes ?? [], colors: parseColors(p.colors),
     stickerOption: Boolean(p.sticker_option), stickerPrice: Number(p.sticker_price ?? 0),
     sizeChart: p.size_chart_image ?? null,
+    hiddenInMenu: Boolean(p.hidden_in_menu), comingSoon: Boolean(p.coming_soon),
   };
 }
 
 const PRODUCT_SELECT =
-  "id, category_id, name, name_ru, slug, price, weight, weight_ru, badge, description, description_ru, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, sort_order";
+  "id, category_id, name, name_ru, slug, price, weight, weight_ru, badge, description, description_ru, image_path, images, availability, sizes, colors, sticker_option, sticker_price, size_chart_image, hidden_in_menu, coming_soon, sort_order";
 
 // ---------- Хуки читання ----------
 export function useDbProducts() {
@@ -113,6 +118,7 @@ function productFields(input: ProductInput) {
     sizes: input.sizes, colors: input.colors,
     sticker_option: input.stickerOption, sticker_price: input.stickerPrice,
     size_chart_image: input.sizeChart,
+    hidden_in_menu: input.hiddenInMenu, coming_soon: input.comingSoon,
   };
 }
 
